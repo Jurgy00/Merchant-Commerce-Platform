@@ -1,4 +1,4 @@
-package com.jurgens.merchantplatform.model;
+package com.jurgens.merchantplatform.entities;
 
 import jakarta.persistence.*;
 import lombok.Getter;
