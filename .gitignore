@@ -1,0 +1,34 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# IDE - VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment / secrets - NEVER commit real credentials
+.env
+.env.local
+application-local.yml
+application-secrets.yml
+
+# Node / Nuxt (for the frontend, once we get there)
+node_modules/
+.nuxt/
+.output/
+dist/
