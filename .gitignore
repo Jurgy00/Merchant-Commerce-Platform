@@ -20,6 +20,8 @@ Thumbs.db
 
 # Logs
 *.log
+*.mv.db
+*.trace.db
 
 # Environment / secrets - NEVER commit real credentials
 .env
