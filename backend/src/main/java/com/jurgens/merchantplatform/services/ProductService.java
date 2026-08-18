@@ -1,4 +1,3 @@
-
 package com.jurgens.merchantplatform.services;
 
 import com.jurgens.merchantplatform.entities.Category;
@@ -27,9 +26,6 @@ public class ProductService {
 
         product.setCategory(category);
         return productRepository.save(product);
-    }
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
     }
     public List<Product> getProductsByCategory(Long categoryId) {
         return productRepository.findByCategoryId(categoryId);
