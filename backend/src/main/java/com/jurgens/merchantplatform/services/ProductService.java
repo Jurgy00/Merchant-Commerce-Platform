@@ -15,25 +15,38 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
 
-    public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository) {
+    public ProductService(ProductRepository productRepository,
+                          CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
     }
 
     public Product createProduct(Long categoryId, Product product) {
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + categoryId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Category not found with id: " + categoryId
+                        ));
 
         product.setCategory(category);
+
         return productRepository.save(product);
     }
+
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+
     public List<Product> getProductsByCategory(Long categoryId) {
         return productRepository.findByCategoryId(categoryId);
     }
 
     public Product getProductById(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Product not found with id: " + id
+                        ));
     }
 
     public Product updateProduct(Long id, Product productDetails) {
