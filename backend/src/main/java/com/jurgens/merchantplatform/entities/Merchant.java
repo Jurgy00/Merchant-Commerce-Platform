@@ -1,5 +1,6 @@
 package com.jurgens.merchantplatform.entities;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,5 +31,8 @@ public class Merchant {
     private String phoneNumber;
 
     @OneToMany(mappedBy = "merchant", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<Category> categories = new ArrayList<>();
+    @OneToMany(mappedBy = "merchant", cascade = CascadeType.ALL)
+    private List<Order> orders = new ArrayList<>();
 }
