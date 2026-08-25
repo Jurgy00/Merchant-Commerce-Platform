@@ -1,7 +1,6 @@
 package com.jurgens.merchantplatform.services;
 
 import com.jurgens.merchantplatform.entities.Merchant;
-import com.jurgens.merchantplatform.exceptions.DuplicateResourceException;
 import com.jurgens.merchantplatform.exceptions.ResourceNotFoundException;
 import com.jurgens.merchantplatform.repositories.MerchantRepository;
 import org.springframework.stereotype.Service;
@@ -18,11 +17,9 @@ public class MerchantService {
     }
 
     public Merchant createMerchant(Merchant merchant) {
-        merchantRepository.findByEmail(merchant.getEmail())
-                .ifPresent(existing -> {
-                    throw new DuplicateResourceException(
-                            "A merchant with email " + merchant.getEmail() + " already exists");
-                });
+        if (merchantRepository.findByEmail(merchant.getEmail()).isPresent()) {
+            throw new RuntimeException("Merchant with email already exists");
+        }
 
         return merchantRepository.save(merchant);
     }
@@ -33,18 +30,19 @@ public class MerchantService {
 
     public Merchant getMerchantById(Long id) {
         return merchantRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Merchant not found with id: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Merchant not found with id: " + id
+                        ));
     }
 
     public Merchant updateMerchant(Long id, Merchant merchantDetails) {
         Merchant existingMerchant = getMerchantById(id);
 
         if (!existingMerchant.getEmail().equals(merchantDetails.getEmail())) {
-            merchantRepository.findByEmail(merchantDetails.getEmail())
-                    .ifPresent(existing -> {
-                        throw new DuplicateResourceException(
-                                "A merchant with email " + merchantDetails.getEmail() + " already exists");
-                    });
+            if (merchantRepository.findByEmail(merchantDetails.getEmail()).isPresent()) {
+                throw new RuntimeException("Merchant with email already exists");
+            }
         }
 
         existingMerchant.setBusinessName(merchantDetails.getBusinessName());
