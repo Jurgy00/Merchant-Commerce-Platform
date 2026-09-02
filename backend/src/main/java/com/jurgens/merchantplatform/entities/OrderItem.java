@@ -1,6 +1,6 @@
-
 package com.jurgens.merchantplatform.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +23,7 @@ public class OrderItem {
 
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
+    @JsonBackReference
     private Order order;
 
     @ManyToOne
