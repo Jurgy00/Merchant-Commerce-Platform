@@ -4,6 +4,8 @@ import com.jurgens.merchantplatform.entities.Payment;
 import com.jurgens.merchantplatform.services.PaymentService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
@@ -25,11 +27,19 @@ public class PaymentController {
                 phoneNumber
         );
     }
+    @GetMapping
+    public java.util.List<Payment> getAllPayments() {
+        return paymentService.getAllPayments();
+    }
     @PostMapping("/mpesa/callback")
-    public String mpesaCallback(@RequestBody String callback) {
+    public String mpesaCallback(
+            @RequestBody Map<String, Object> callback
+    ) {
 
         System.out.println("M-Pesa Callback Received:");
         System.out.println(callback);
+
+        paymentService.processMpesaCallback(callback);
 
         return "Callback received";
     }

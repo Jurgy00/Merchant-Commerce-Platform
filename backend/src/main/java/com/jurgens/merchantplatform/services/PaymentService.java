@@ -1,6 +1,7 @@
 package com.jurgens.merchantplatform.services;
 
 import com.jurgens.merchantplatform.entities.Order;
+import com.jurgens.merchantplatform.entities.OrderStatus;
 import com.jurgens.merchantplatform.entities.Payment;
 import com.jurgens.merchantplatform.entities.PaymentStatus;
 import com.jurgens.merchantplatform.repositories.OrderRepository;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Service
 public class PaymentService {
@@ -27,18 +29,21 @@ public class PaymentService {
         this.mpesaService = mpesaService;
     }
 
-    public Payment initiatePayment(Long orderId, String phoneNumber) {
+    public Payment initiatePayment(
+            Long orderId,
+            String phoneNumber
+    ) {
 
-        // 1. Find the order
+        // Find the order
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() ->
                         new RuntimeException("Order not found")
                 );
 
-        // 2. Get the amount from the order
+        // Get the amount from the order
         BigDecimal amount = order.getTotalAmount();
 
-        // 3. Create payment
+        // Create payment
         Payment payment = new Payment();
 
         payment.setOrder(order);
@@ -47,10 +52,10 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.PENDING);
         payment.setCreatedAt(LocalDateTime.now());
 
-        // 4. Save payment
+        // Save payment
         payment = paymentRepository.save(payment);
 
-        // 5. Send STK Push
+        // Send STK Push
         MpesaService.StkPushResponse response =
                 mpesaService.initiateStkPush(
                         amount.intValue(),
@@ -58,17 +63,17 @@ public class PaymentService {
                         order.getOrderNumber()
                 );
 
-        // 6. Save MerchantRequestID
+        // Save MerchantRequestID
         payment.setMerchantRequestId(
                 response.MerchantRequestID()
         );
 
-        // 7. Save CheckoutRequestID
+        // Save CheckoutRequestID
         payment.setCheckoutRequestId(
                 response.CheckoutRequestID()
         );
 
-        // 8. Save the Daraja result information
+        // Save Daraja result
         payment.setResultCode(
                 Integer.valueOf(response.ResponseCode())
         );
@@ -77,7 +82,62 @@ public class PaymentService {
                 response.ResponseDescription()
         );
 
-        // 9. Save updated payment
+        // Save updated payment
         return paymentRepository.save(payment);
+    }
+
+    public void processMpesaCallback(
+            Map<String, Object> callback
+    ) {
+
+        Map<String, Object> body =
+                (Map<String, Object>) callback.get("Body");
+
+        Map<String, Object> stkCallback =
+                (Map<String, Object>) body.get("stkCallback");
+
+        String checkoutRequestId =
+                (String) stkCallback.get("CheckoutRequestID");
+
+        Integer resultCode =
+                ((Number) stkCallback.get("ResultCode")).intValue();
+
+        String resultDesc =
+                (String) stkCallback.get("ResultDesc");
+
+        // Find the payment using CheckoutRequestID
+        Payment payment =
+                paymentRepository.findByCheckoutRequestId(
+                        checkoutRequestId
+                ).orElseThrow(() ->
+                        new RuntimeException("Payment not found")
+                );
+
+        // Save M-Pesa result
+        payment.setResultCode(resultCode);
+        payment.setResultDesc(resultDesc);
+
+        // Check whether payment was successful
+        if (resultCode == 0) {
+
+            payment.setStatus(PaymentStatus.SUCCESS);
+
+            // Confirm the order
+            payment.getOrder().setStatus(OrderStatus.CONFIRMED);
+
+            orderRepository.save(payment.getOrder());
+
+        } else {
+
+            // Payment failed
+            payment.setStatus(PaymentStatus.FAILED);
+        }
+
+        // Save payment
+        paymentRepository.save(payment);
+    }
+
+    public java.util.List<Payment> getAllPayments() {
+        return paymentRepository.findAll();
     }
 }
