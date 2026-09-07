@@ -23,3 +23,11 @@ spring:
     console:
       enabled: true
       path: /h2-console
+mpesa:
+  consumer-key: ${MPESA_CONSUMER_KEY}
+  consumer-secret: ${MPESA_CONSUMER_SECRET}
+  short-code: ${MPESA_SHORT_CODE}
+  passkey: ${MPESA_PASSKEY}
+  callback-url: ${MPESA_CALLBACK_URL}
+  auth-url: https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials
+  stk-push-url: https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest
