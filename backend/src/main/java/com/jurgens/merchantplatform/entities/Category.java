@@ -1,5 +1,7 @@
 package com.jurgens.merchantplatform.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,8 +30,10 @@ public class Category {
 
     @ManyToOne
     @JoinColumn(name = "merchant_id", nullable = false)
+    @JsonBackReference
     private Merchant merchant;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<Product> products = new ArrayList<>();
 }
