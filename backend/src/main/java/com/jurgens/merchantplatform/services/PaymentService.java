@@ -112,6 +112,12 @@ public class PaymentService {
                 ).orElseThrow(() ->
                         new RuntimeException("Payment not found")
                 );
+        // Ignore duplicate callbacks
+        if (payment.getStatus() == PaymentStatus.SUCCESS
+                || payment.getStatus() == PaymentStatus.FAILED) {
+
+            return;
+        }
 
         // Save M-Pesa result
         payment.setResultCode(resultCode);
