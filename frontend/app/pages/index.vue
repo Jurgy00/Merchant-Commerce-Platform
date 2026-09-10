@@ -44,6 +44,11 @@ const sampleProducts = [
     return total + product.price
   }, 0)
 })
+const maxPrice = ref(2000)
+
+const cheapProducts = computed(() => {
+  return sampleProducts.filter(product => product.price < maxPrice.value)
+})
 const heroTitle = 'Find your next great read'
 const heroDescription = 'Discover books for every reader.'
 interface HeroLink {
@@ -71,6 +76,10 @@ const heroLinks: HeroLink[] = [
 
   <UPageSection title="Vue Practice">
     <div>
+          <UInput
+        v-model="maxPrice"
+        type="number"
+      />
       <UButton @click="addToCart">
         Add
       </UButton>
@@ -98,7 +107,7 @@ const heroLinks: HeroLink[] = [
 
       <div>
         <div
-          v-for="product in sampleProducts"
+          v-for="product in cheapProducts"
           :key="product.id"
 
         >
