@@ -1,4 +1,5 @@
-package com.jurgens.merchantplatform.services;
+
+        package com.jurgens.merchantplatform.services;
 
 import com.jurgens.merchantplatform.entities.Order;
 import com.jurgens.merchantplatform.entities.OrderStatus;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -34,16 +37,13 @@ public class PaymentService {
             String phoneNumber
     ) {
 
-        // Find the order
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() ->
                         new RuntimeException("Order not found")
                 );
 
-        // Get the amount from the order
         BigDecimal amount = order.getTotalAmount();
 
-        // Create payment
         Payment payment = new Payment();
 
         payment.setOrder(order);
@@ -52,10 +52,8 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.PENDING);
         payment.setCreatedAt(LocalDateTime.now());
 
-        // Save payment
         payment = paymentRepository.save(payment);
 
-        // Send STK Push
         MpesaService.StkPushResponse response =
                 mpesaService.initiateStkPush(
                         amount.intValue(),
@@ -63,17 +61,14 @@ public class PaymentService {
                         order.getOrderNumber()
                 );
 
-        // Save MerchantRequestID
         payment.setMerchantRequestId(
                 response.MerchantRequestID()
         );
 
-        // Save CheckoutRequestID
         payment.setCheckoutRequestId(
                 response.CheckoutRequestID()
         );
 
-        // Save Daraja result
         payment.setResultCode(
                 Integer.valueOf(response.ResponseCode())
         );
@@ -82,7 +77,6 @@ public class PaymentService {
                 response.ResponseDescription()
         );
 
-        // Save updated payment
         return paymentRepository.save(payment);
     }
 
@@ -105,45 +99,87 @@ public class PaymentService {
         String resultDesc =
                 (String) stkCallback.get("ResultDesc");
 
-        // Find the payment using CheckoutRequestID
         Payment payment =
                 paymentRepository.findByCheckoutRequestId(
                         checkoutRequestId
                 ).orElseThrow(() ->
                         new RuntimeException("Payment not found")
                 );
-        // Ignore duplicate callbacks
+
         if (payment.getStatus() == PaymentStatus.SUCCESS
                 || payment.getStatus() == PaymentStatus.FAILED) {
 
             return;
         }
 
-        // Save M-Pesa result
         payment.setResultCode(resultCode);
         payment.setResultDesc(resultDesc);
 
-        // Check whether payment was successful
         if (resultCode == 0) {
+
+            Map<String, Object> callbackMetadata =
+                    (Map<String, Object>)
+                            stkCallback.get("CallbackMetadata");
+
+            if (callbackMetadata != null) {
+
+                List<Map<String, Object>> items =
+                        (List<Map<String, Object>>)
+                                callbackMetadata.get("Item");
+
+                if (items != null) {
+
+                    for (Map<String, Object> item : items) {
+
+                        String name =
+                                (String) item.get("Name");
+
+                        Object value =
+                                item.get("Value");
+
+                        if ("MpesaReceiptNumber".equals(name)) {
+
+                            payment.setMpesaReceiptNumber(
+                                    String.valueOf(value)
+                            );
+                        }
+
+                        if ("TransactionDate".equals(name)) {
+
+                            String transactionDate =
+                                    String.valueOf(value);
+
+                            DateTimeFormatter formatter =
+                                    DateTimeFormatter.ofPattern(
+                                            "yyyyMMddHHmmss"
+                                    );
+
+                            payment.setTransactionDate(
+                                    LocalDateTime.parse(
+                                            transactionDate,
+                                            formatter
+                                    )
+                            );
+                        }
+                    }
+                }
+            }
 
             payment.setStatus(PaymentStatus.SUCCESS);
 
-            // Confirm the order
             payment.getOrder().setStatus(OrderStatus.CONFIRMED);
 
             orderRepository.save(payment.getOrder());
 
         } else {
 
-            // Payment failed
             payment.setStatus(PaymentStatus.FAILED);
         }
 
-        // Save payment
         paymentRepository.save(payment);
     }
 
-    public java.util.List<Payment> getAllPayments() {
+    public List<Payment> getAllPayments() {
         return paymentRepository.findAll();
     }
 }
