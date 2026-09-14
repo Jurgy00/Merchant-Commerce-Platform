@@ -1,16 +1,13 @@
 <script setup lang="ts">
-const cartCount = ref(0)
+const cart = ref<Product[]>([])
 
-const addToCart = () => {
-  cartCount.value++
-
+const addToCart = (product: Product) => {
+  cart.value.push(product)
 }
-const removeFromCart = () => {
-  if (cartCount.value > 0) {
-    cartCount.value--
-  }
 
-}
+const cartCount = computed(() => {
+  return cart.value.length
+})
 const categories = [
   'Fiction',
   'Business',
@@ -18,7 +15,15 @@ const categories = [
   'Self Development',
   'Children'
 ]
-const sampleProducts = [
+
+interface Product {
+  id: number
+  name: string
+  price: number
+  category: string
+}
+
+const sampleProducts: Product[] = [
   {
     id: 1,
     name: 'Atomic Habits',
@@ -80,14 +85,6 @@ const heroLinks: HeroLink[] = [
         v-model="maxPrice"
         type="number"
       />
-      <UButton @click="addToCart">
-        Add
-      </UButton>
-
-      <UButton @click="removeFromCart">
-        Remove
-      </UButton>
-
       <p v-if="cartCount === 0">
         Your cart is empty.
       </p>
@@ -107,18 +104,23 @@ const heroLinks: HeroLink[] = [
 
       <div>
         <div
-          v-for="product in cheapProducts"
-          :key="product.id"
 
-        >
-          <p>{{ product.name }}</p>
-          <p>KES {{ product.price }}</p>
-          <p>{{ product.category }}</p>
-             <p>
+            v-for="product in cheapProducts"
+            :key="product.id"
+          >
+            <p>{{ product.name }}</p>
+            <p>KES {{ product.price }}</p>
+            <p>{{ product.category }}</p>
+
+            <UButton @click="addToCart(product)">
+              Add to Cart
+            </UButton>
+
+            <p>
               Total: KES {{ totalPrice }}
             </p>
-        </div>
-      </div>
+          </div>
+                </div>
     </div>
   </UPageSection>
 
