@@ -1,13 +1,43 @@
 <script setup lang="ts">
-const cart = ref<Product[]>([])
+const cart = ref<CartItem[]>([])
 
 const addToCart = (product: Product) => {
-  cart.value.push(product)
+  const existingItem = cart.value.find(
+    item => item.product.id === product.id
+  )
+
+  if (existingItem) {
+    existingItem.quantity++
+  } else {
+    cart.value.push({
+      product,
+      quantity: 1
+    })
+  }
 }
 
 const cartCount = computed(() => {
-  return cart.value.length
+  return cart.value.reduce((total, item) => {
+    return total + item.quantity
+  }, 0)
 })
+const updateQuantity = (productId: number, change: number) => {
+  const item = cart.value.find(
+    item => item.product.id === productId
+  )
+
+  if (!item) {
+    return
+  }
+
+  item.quantity += change
+
+  if (item.quantity <= 0) {
+    cart.value = cart.value.filter(
+      item => item.product.id !== productId
+    )
+  }
+}
 const categories = [
   'Fiction',
   'Business',
@@ -22,7 +52,10 @@ interface Product {
   price: number
   category: string
 }
-
+interface CartItem {
+  product: Product
+  quantity: number
+}
 const sampleProducts: Product[] = [
   {
     id: 1,
@@ -80,48 +113,105 @@ const heroLinks: HeroLink[] = [
   />
 
   <UPageSection title="Vue Practice">
-    <div>
           <UInput
         v-model="maxPrice"
         type="number"
       />
-      <p v-if="cartCount === 0">
-        Your cart is empty.
-      </p>
+ <p v-if="cartCount === 0">
+  Your cart is empty.
+</p>
 
-      <p v-else>
-        You have {{ cartCount }} item(s) in your cart.
-      </p>
+<p v-else>
+  You have {{ cartCount }} item(s) in your cart.
+</p>
 
-      <div>
-       <p
-        v-for="(category, index) in categories"
-        :key="category"
-      >
-        {{ index + 1}} - {{ category }}
-      </p>
+<div class="mt-8">
+  <h3 class="text-xl font-semibold">
+    Your Cart
+  </h3>
+
+  <div
+    v-if="cart.length === 0"
+    class="mt-4"
+  >
+    <UAlert
+      title="Your cart is empty"
+      description="Add a product to get started."
+      icon="i-lucide-shopping-cart"
+    />
+  </div>
+
+  <div
+    v-else
+    class="mt-4 space-y-4"
+  >
+    <UCard
+      v-for="item in cart"
+      :key="item.product.id"
+    >
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <p class="font-semibold">
+            {{ item.product.name }}
+          </p>
+
+          <p class="text-sm text-muted">
+            KES {{ item.product.price }} each
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <UButton
+            icon="i-lucide-minus"
+            color="neutral"
+            variant="outline"
+            @click="updateQuantity(item.product.id, -1)"
+          />
+
+          <span class="min-w-6 text-center">
+            {{ item.quantity }}
+          </span>
+
+          <UButton
+            icon="i-lucide-plus"
+            color="neutral"
+            variant="outline"
+            @click="updateQuantity(item.product.id, 1)"
+          />
+        </div>
       </div>
+    </UCard>
+  </div>
+</div>
+<UCard
+  v-for="product in cheapProducts"
+  :key="product.id"
+>
+  <template #header>
+    <div>
+      <p class="font-semibold">
+        {{ product.name }}
+      </p>
 
-      <div>
-        <div
-
-            v-for="product in cheapProducts"
-            :key="product.id"
-          >
-            <p>{{ product.name }}</p>
-            <p>KES {{ product.price }}</p>
-            <p>{{ product.category }}</p>
-
-            <UButton @click="addToCart(product)">
-              Add to Cart
-            </UButton>
-
-            <p>
-              Total: KES {{ totalPrice }}
-            </p>
-          </div>
-                </div>
+      <p class="text-sm text-muted">
+        {{ product.category }}
+      </p>
     </div>
+  </template>
+
+  <p class="text-lg font-semibold">
+    KES {{ product.price }}
+  </p>
+
+  <template #footer>
+    <UButton
+      block
+      @click="addToCart(product)"
+    >
+      Add to Cart
+    </UButton>
+  </template>
+</UCard>
   </UPageSection>
 
   <UPageSection
