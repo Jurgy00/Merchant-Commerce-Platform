@@ -139,9 +139,20 @@ public class PaymentService {
 
                         if ("MpesaReceiptNumber".equals(name)) {
 
-                            payment.setMpesaReceiptNumber(
-                                    String.valueOf(value)
-                            );
+                            String receiptNumber = String.valueOf(value);
+
+                            Payment existingPayment =
+                                    paymentRepository.findByMpesaReceiptNumber(
+                                            receiptNumber
+                                    ).orElse(null);
+
+                            if (existingPayment != null
+                                    && !existingPayment.getId().equals(payment.getId())) {
+
+                                return;
+                            }
+
+                            payment.setMpesaReceiptNumber(receiptNumber);
                         }
 
                         if ("TransactionDate".equals(name)) {

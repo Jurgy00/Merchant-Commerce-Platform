@@ -35,10 +35,13 @@ public class Payment {
     @Column(nullable = false)
     private PaymentStatus status;
 
+    @Column(unique = true)
     private String merchantRequestId;
 
+    @Column(unique = true)
     private String checkoutRequestId;
 
+    @Column(unique = true)
     private String mpesaReceiptNumber;
 
     private Integer resultCode;
