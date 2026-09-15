@@ -42,6 +42,24 @@ public class PaymentService {
             String phoneNumber
     ) {
 
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Phone number is required"
+            );
+        }
+
+        phoneNumber = phoneNumber.trim();
+
+        if (phoneNumber.startsWith("0")) {
+            phoneNumber = "254" + phoneNumber.substring(1);
+        }
+
+        if (!phoneNumber.matches("254(7|1)[0-9]{8}")) {
+            throw new IllegalArgumentException(
+                    "Invalid Kenyan phone number"
+            );
+        }
+
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Order not found")
