@@ -13,4 +13,10 @@ public class GlobalExceptionHandler {
     public String handleResourceNotFound(ResourceNotFoundException ex) {
         return ex.getMessage();
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String handleIllegalArgument(IllegalArgumentException ex) {
+        return ex.getMessage();
+    }
 }
