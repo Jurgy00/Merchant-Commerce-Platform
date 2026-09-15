@@ -43,4 +43,10 @@ public class PaymentController {
 
         return "Callback received";
     }
+    @GetMapping("/order/{orderId}")
+    public java.util.List<Payment> getPaymentsByOrderId(
+            @PathVariable Long orderId
+    ) {
+        return paymentService.getPaymentsByOrderId(orderId);
+    }
 }

@@ -7,6 +7,7 @@ import com.jurgens.merchantplatform.entities.Payment;
 import com.jurgens.merchantplatform.entities.PaymentStatus;
 import com.jurgens.merchantplatform.repositories.OrderRepository;
 import com.jurgens.merchantplatform.repositories.PaymentRepository;
+import com.jurgens.merchantplatform.repositories.ProductRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,15 +22,18 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final MpesaService mpesaService;
+    private final ProductRepository productRepository;
 
     public PaymentService(
             PaymentRepository paymentRepository,
             OrderRepository orderRepository,
-            MpesaService mpesaService
+            MpesaService mpesaService,
+            ProductRepository productRepository
     ) {
         this.paymentRepository = paymentRepository;
         this.orderRepository = orderRepository;
         this.mpesaService = mpesaService;
+        this.productRepository = productRepository;
     }
 
     public Payment initiatePayment(
@@ -137,22 +141,42 @@ public class PaymentService {
                         Object value =
                                 item.get("Value");
 
+                        if ("Amount".equals(name)) {
+
+                            BigDecimal callbackAmount =
+                                    new BigDecimal(String.valueOf(value));
+
+                            if (callbackAmount.compareTo(
+                                    payment.getAmount()) != 0) {
+
+                                throw new RuntimeException(
+                                        "Payment amount does not match order amount"
+                                );
+                            }
+                        }
+
                         if ("MpesaReceiptNumber".equals(name)) {
 
-                            String receiptNumber = String.valueOf(value);
+                            String receiptNumber =
+                                    String.valueOf(value);
 
                             Payment existingPayment =
-                                    paymentRepository.findByMpesaReceiptNumber(
-                                            receiptNumber
-                                    ).orElse(null);
+                                    paymentRepository
+                                            .findByMpesaReceiptNumber(
+                                                    receiptNumber
+                                            )
+                                            .orElse(null);
 
                             if (existingPayment != null
-                                    && !existingPayment.getId().equals(payment.getId())) {
+                                    && !existingPayment.getId()
+                                    .equals(payment.getId())) {
 
                                 return;
                             }
 
-                            payment.setMpesaReceiptNumber(receiptNumber);
+                            payment.setMpesaReceiptNumber(
+                                    receiptNumber
+                            );
                         }
 
                         if ("TransactionDate".equals(name)) {
@@ -176,15 +200,40 @@ public class PaymentService {
                 }
             }
 
+            for (var item : payment.getOrder().getItems()) {
+
+                var product = item.getProduct();
+
+                int newStock =
+                        product.getStockQuantity() - item.getQuantity();
+
+                if (newStock < 0) {
+                    throw new RuntimeException(
+                            "Insufficient stock for product: "
+                                    + product.getName()
+                    );
+                }
+
+                product.setStockQuantity(newStock);
+
+                productRepository.save(product);
+            }
+
             payment.setStatus(PaymentStatus.SUCCESS);
 
-            payment.getOrder().setStatus(OrderStatus.CONFIRMED);
+            payment.getOrder().setStatus(
+                    OrderStatus.CONFIRMED
+            );
 
-            orderRepository.save(payment.getOrder());
+            orderRepository.save(
+                    payment.getOrder()
+            );
 
         } else {
 
-            payment.setStatus(PaymentStatus.FAILED);
+            payment.setStatus(
+                    PaymentStatus.FAILED
+            );
         }
 
         paymentRepository.save(payment);
@@ -192,5 +241,9 @@ public class PaymentService {
 
     public List<Payment> getAllPayments() {
         return paymentRepository.findAll();
+    }
+
+    public List<Payment> getPaymentsByOrderId(Long orderId) {
+        return paymentRepository.findByOrderId(orderId);
     }
 }
