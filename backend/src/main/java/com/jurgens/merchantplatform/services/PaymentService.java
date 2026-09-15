@@ -5,6 +5,7 @@ import com.jurgens.merchantplatform.entities.Order;
 import com.jurgens.merchantplatform.entities.OrderStatus;
 import com.jurgens.merchantplatform.entities.Payment;
 import com.jurgens.merchantplatform.entities.PaymentStatus;
+import com.jurgens.merchantplatform.exceptions.ResourceNotFoundException;
 import com.jurgens.merchantplatform.repositories.OrderRepository;
 import com.jurgens.merchantplatform.repositories.PaymentRepository;
 import com.jurgens.merchantplatform.repositories.ProductRepository;
@@ -43,7 +44,7 @@ public class PaymentService {
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() ->
-                        new RuntimeException("Order not found")
+                        new ResourceNotFoundException("Order not found")
                 );
 
         BigDecimal amount = order.getTotalAmount();
@@ -107,7 +108,7 @@ public class PaymentService {
                 paymentRepository.findByCheckoutRequestId(
                         checkoutRequestId
                 ).orElseThrow(() ->
-                        new RuntimeException("Payment not found")
+                        new ResourceNotFoundException("Payment not found")
                 );
 
         if (payment.getStatus() == PaymentStatus.SUCCESS
