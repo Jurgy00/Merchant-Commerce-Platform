@@ -11,8 +11,8 @@ useHead({
   }
 })
 
-const title = 'Nuxt Starter Template'
-const description = 'A production-ready starter template powered by Nuxt UI. Build beautiful, accessible, and performant applications in minutes, not hours.'
+const title = 'Merchant Commerce Platform'
+const description = 'A simple commerce platform built with Nuxt 3 and Nuxt UI.'
 
 useSeoMeta({
   title,
