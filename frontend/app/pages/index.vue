@@ -228,140 +228,176 @@ const resetFilters = () => {
       <!-- ================================
            PRODUCT GRID
       ================================= -->
+     <div
+  v-if="filteredProducts.length > 0"
+  class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+>
+  <UCard
+    v-for="product in filteredProducts"
+    :key="product.id"
+    :ui="{
+      root: 'group overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl',
+      body: 'p-0 sm:p-0',
+      footer: 'p-5'
+    }"
+  >
+    <!-- Book cover -->
+    <NuxtLink
+      :to="`/products/${product.id}`"
+      class="block"
+    >
       <div
-        v-if="filteredProducts.length > 0"
-        class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        class="relative flex aspect-[3/4] items-center justify-center overflow-hidden bg-gradient-to-br from-primary/20 via-primary/5 to-default"
       >
+        <!-- Decorative background -->
+        <div
+          class="absolute -right-16 -top-16 size-40 rounded-full bg-primary/10 blur-2xl"
+        />
 
-        <UCard
-          v-for="(product, index) in filteredProducts"
-          :key="product.id"
-          class="group overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
+        <div
+          class="absolute -bottom-20 -left-20 size-48 rounded-full bg-primary/10 blur-3xl"
+        />
+
+        <!-- Cover -->
+        <div
+          class="relative mx-8 flex h-[78%] w-[72%] flex-col justify-between overflow-hidden rounded-r-xl rounded-l-md border border-white/10 bg-default p-6 text-center shadow-2xl transition-transform duration-300 group-hover:scale-[1.03]"
         >
-
-          <!-- Book cover -->
-          <NuxtLink
-            :to="`/products/${product.id}`"
-            class="block"
-          >
-            <div
-              class="relative flex aspect-[3/4] items-center justify-center overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900"
-            >
-
-              <div
-                class="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/5"
-              />
-
-              <div class="relative px-6 text-center">
-
-                <UIcon
-                  name="i-lucide-book-open"
-                  class="mx-auto mb-5 size-12 text-primary/70 transition-transform duration-300 group-hover:scale-110"
-                />
-
-                <p
-                  class="text-xl font-bold leading-tight text-highlighted"
-                >
-                  {{ product.name }}
-                </p>
-
-                <div
-                  class="mx-auto mt-4 h-px w-12 bg-primary/40"
-                />
-
-                <p
-                  class="mt-3 text-xs font-medium uppercase tracking-widest text-muted"
-                >
-                  {{ product.category }}
-                </p>
-
-              </div>
-            </div>
-          </NuxtLink>
-
-
-          <!-- Product information -->
-          <div class="pt-5">
-
-            <div
-              class="flex items-start justify-between gap-3"
-            >
-              <div class="min-w-0">
-
-                <h3
-                  class="line-clamp-2 font-semibold leading-tight text-highlighted"
-                >
-                  {{ product.name }}
-                </h3>
-
-                <p class="mt-1 text-sm text-muted">
-                  {{ product.category }}
-                </p>
-
-              </div>
-
-              <span
-                class="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
-              >
-                {{ product.stock }} left
-              </span>
-            </div>
-
-
+          <div>
             <p
-              class="mt-4 line-clamp-2 text-sm leading-6 text-muted"
+              class="text-[10px] font-bold uppercase tracking-[0.25em] text-primary"
             >
-              {{ product.description }}
+              {{ product.category }}
             </p>
-
-
-            <div
-              class="mt-5 flex items-end justify-between gap-3"
-            >
-              <div>
-                <p
-                  class="text-xl font-bold text-highlighted"
-                >
-                  KES {{ product.price }}
-                </p>
-
-                <p class="text-xs text-muted">
-                  Available now
-                </p>
-              </div>
-            </div>
-
-
-            <!-- Actions -->
-            <div
-              class="mt-5 grid grid-cols-2 gap-2"
-            >
-              <UButton
-                :to="`/products/${product.id}`"
-                color="neutral"
-                variant="outline"
-                block
-              >
-                Details
-              </UButton>
-
-              <UButton
-                block
-                :disabled="product.stock === 0"
-                icon="i-lucide-shopping-cart"
-                @click="handleAddToCart(product)"
-              >
-                Add
-              </UButton>
-            </div>
-
           </div>
 
-        </UCard>
+          <div>
+            <UIcon
+              name="i-lucide-book-open"
+              class="mx-auto mb-4 size-9 text-primary/70"
+            />
 
+            <p
+              class="text-lg font-bold leading-tight text-highlighted"
+            >
+              {{ product.name }}
+            </p>
+          </div>
+
+          <div>
+            <div
+              class="mx-auto mb-3 h-px w-10 bg-primary/40"
+            />
+
+            <p
+              class="text-[9px] uppercase tracking-[0.2em] text-muted"
+            >
+              BookStore
+            </p>
+          </div>
+        </div>
+
+        <!-- View overlay -->
+        <div
+          class="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-300 group-hover:bg-black/10"
+        >
+          <span
+            class="translate-y-2 rounded-full bg-default/90 px-4 py-2 text-sm font-medium opacity-0 shadow-lg backdrop-blur transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100"
+          >
+            View book
+          </span>
+        </div>
+      </div>
+    </NuxtLink>
+
+    <!-- Product information -->
+    <div class="p-5">
+
+      <!-- Category -->
+      <p
+        class="text-xs font-semibold uppercase tracking-widest text-primary"
+      >
+        {{ product.category }}
+      </p>
+
+      <!-- Title -->
+      <NuxtLink
+        :to="`/products/${product.id}`"
+        class="mt-2 block"
+      >
+        <h3
+          class="line-clamp-2 text-lg font-bold leading-tight text-highlighted transition-colors hover:text-primary"
+        >
+          {{ product.name }}
+        </h3>
+      </NuxtLink>
+
+      <!-- Description -->
+      <p
+        class="mt-3 line-clamp-2 text-sm leading-6 text-muted"
+      >
+        {{ product.description }}
+      </p>
+
+      <!-- Price / stock -->
+      <div
+        class="mt-5 flex items-end justify-between gap-3"
+      >
+        <div>
+          <p class="text-xl font-bold text-highlighted">
+            KES {{ product.price }}
+          </p>
+
+          <p class="mt-1 text-xs text-muted">
+            In stock
+          </p>
+        </div>
+
+        <div
+          class="rounded-full px-2.5 py-1 text-xs font-medium"
+          :class="
+            product.stock <= 3
+              ? 'bg-error/10 text-error'
+              : 'bg-success/10 text-success'
+          "
+        >
+          {{
+            product.stock === 0
+              ? 'Sold out'
+              : product.stock <= 3
+                ? `${product.stock} left`
+                : `${product.stock} available`
+          }}
+        </div>
       </div>
 
+    </div>
 
+    <!-- Actions -->
+    <template #footer>
+      <div class="grid grid-cols-2 gap-2">
+
+        <UButton
+          :to="`/products/${product.id}`"
+          color="neutral"
+          variant="outline"
+          block
+        >
+          View Details
+        </UButton>
+
+        <UButton
+          block
+          icon="i-lucide-shopping-cart"
+          :disabled="product.stock === 0"
+          @click="handleAddToCart(product)"
+        >
+          Add to Cart
+        </UButton>
+
+      </div>
+    </template>
+  </UCard>
+</div>
       <!-- Empty state -->
       <UCard
         v-else
