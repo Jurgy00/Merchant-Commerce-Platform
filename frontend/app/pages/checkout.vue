@@ -73,146 +73,224 @@ const handleCheckout = async () => {
 </script>
 
 <template>
-  <UPageSection
-    title="Checkout"
-    description="Review your order and provide your delivery details."
-  >
-    <UAlert
+  <main>
+    <!-- Page heading -->
+    <section class="mx-auto max-w-7xl px-4 pb-8 pt-10 sm:px-6 sm:pt-14 lg:px-8">
+      <div class="max-w-2xl">
+        <p class="text-sm font-semibold uppercase tracking-widest text-primary">
+          Secure Checkout
+        </p>
+
+        <h1 class="mt-2 text-4xl font-black tracking-tight text-highlighted sm:text-5xl">
+          Complete your order
+        </h1>
+
+        <p class="mt-4 text-base leading-7 text-muted">
+          Enter your delivery details and review your order before payment.
+        </p>
+      </div>
+    </section>
+
+    <!-- Empty cart -->
+    <section
       v-if="cart.length === 0"
-      title="Your cart is empty"
-      description="Add a product before proceeding to checkout."
-      icon="i-lucide-shopping-cart"
+      class="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8"
     >
-      <template #actions>
-        <UButton to="/">
-          Browse Books
-        </UButton>
-      </template>
-    </UAlert>
+      <div class="rounded-3xl border border-default bg-elevated/30 px-6 py-16 text-center">
+        <div class="mx-auto flex size-16 items-center justify-center rounded-2xl bg-primary/10">
+          <UIcon
+            name="i-lucide-shopping-cart"
+            class="size-8 text-primary"
+          />
+        </div>
 
-    <div
+        <h2 class="mt-6 text-2xl font-bold text-highlighted">
+          Your cart is empty
+        </h2>
+
+        <p class="mx-auto mt-3 max-w-md text-muted">
+          Add a book to your cart before proceeding to checkout.
+        </p>
+
+        <div class="mt-7">
+          <UButton
+            to="/"
+            size="lg"
+            leading-icon="i-lucide-arrow-left"
+          >
+            Browse Books
+          </UButton>
+        </div>
+      </div>
+    </section>
+
+    <!-- Checkout -->
+    <section
       v-else
-      class="grid gap-8 lg:grid-cols-2"
+      class="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8"
     >
-      <!-- Customer details -->
-      <UCard>
-        <template #header>
-          <div>
-            <p class="text-lg font-semibold">
-              Customer Details
-            </p>
+      <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+        <!-- Customer details -->
+        <div>
+          <UCard>
+            <template #header>
+              <div class="flex items-start gap-4">
+                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                  <UIcon
+                    name="i-lucide-map-pin"
+                    class="size-5 text-primary"
+                  />
+                </div>
 
-            <p class="text-sm text-muted">
-              Enter the information needed to complete your order.
-            </p>
-          </div>
-        </template>
+                <div>
+                  <p class="text-lg font-semibold text-highlighted">
+                    Delivery Details
+                  </p>
 
-        <div class="space-y-5">
-          <UFormField
-              label="Full Name"
-              name="name"
-              :error="errors.customerName"
-            >
-            <UInput
-              v-model="customerName"
-              placeholder="John Doe"
-            />
-          </UFormField>
+                  <p class="mt-1 text-sm text-muted">
+                    Enter the information needed to deliver your order.
+                  </p>
+                </div>
+              </div>
+            </template>
 
-                    <UFormField
-              label="M-Pesa Phone Number"
-              name="phone"
-              :error="errors.phoneNumber"
-            >
-            <UInput
-              v-model="phoneNumber"
-              type="tel"
-              placeholder="0712345678"
-            />
-          </UFormField>
+            <div class="space-y-6">
+              <UFormField
+                label="Full Name"
+                name="name"
+                :error="errors.customerName"
+              >
+                <UInput
+                  v-model="customerName"
+                  size="lg"
+                  placeholder="John Doe"
+                  icon="i-lucide-user"
+                />
+              </UFormField>
+
+              <UFormField
+                label="M-Pesa Phone Number"
+                name="phone"
+                :error="errors.phoneNumber"
+                description="Use the Kenyan number registered with M-Pesa."
+              >
+                <UInput
+                  v-model="phoneNumber"
+                  type="tel"
+                  size="lg"
+                  placeholder="0712345678"
+                  icon="i-lucide-smartphone"
+                />
+              </UFormField>
+
               <UFormField
                 label="Delivery Address"
                 name="address"
                 :error="errors.deliveryAddress"
               >
-            <UTextarea
-              v-model="deliveryAddress"
-              placeholder="Enter your delivery address"
-            />
-          </UFormField>
-          <UFormField
-            label="Optional Notes"
-            name="notes"
-            description="Any additional instructions for your order."
-          >
-            <UTextarea
-              v-model="optionalNotes"
-              placeholder="e.g. Please call when you arrive..."
-            />
-          </UFormField>
-        </div>
-      </UCard>
+                <UTextarea
+                  v-model="deliveryAddress"
+                  size="lg"
+                  :rows="4"
+                  placeholder="Enter your delivery address"
+                />
+              </UFormField>
 
-      <!-- Order summary -->
-      <UCard>
-        <template #header>
-          <div>
-            <p class="text-lg font-semibold">
-              Order Summary
-            </p>
+              <UFormField
+                label="Optional Notes"
+                name="notes"
+                description="Any additional instructions for your order."
+              >
+                <UTextarea
+                  v-model="optionalNotes"
+                  size="lg"
+                  :rows="3"
+                  placeholder="e.g. Please call when you arrive..."
+                />
+              </UFormField>
+            </div>
+          </UCard>
+
+          <div class="mt-5 flex items-center gap-3 rounded-2xl border border-default bg-elevated/30 p-4">
+            <UIcon
+              name="i-lucide-shield-check"
+              class="size-5 shrink-0 text-primary"
+            />
 
             <p class="text-sm text-muted">
-              {{ cartCount }} item(s)
+              Your delivery information is used to process and deliver your order.
             </p>
-          </div>
-        </template>
-
-        <div class="space-y-4">
-          <div
-            v-for="item in cart"
-            :key="item.product.id"
-            class="flex items-start justify-between gap-4"
-          >
-            <div>
-              <p class="font-medium">
-                {{ item.product.name }}
-              </p>
-
-              <p class="text-sm text-muted">
-                {{ item.quantity }} × KES {{ item.product.price }}
-              </p>
-            </div>
-
-            <p class="font-semibold">
-              KES {{ item.product.price * item.quantity }}
-            </p>
-          </div>
-
-          <div class="border-t pt-4">
-            <div class="flex items-center justify-between">
-              <span class="font-semibold">
-                Total
-              </span>
-
-              <span class="text-xl font-bold">
-                KES {{ totalPrice }}
-              </span>
-            </div>
           </div>
         </div>
 
-        <template #footer>
-              <div class="flex flex-col gap-3 sm:flex-row">
-                <UButton
-                  to="/cart"
-                  color="neutral"
-                  variant="outline"
-                  leading-icon="i-lucide-arrow-left"
-                >
-                  Back to Cart
-                </UButton>
+        <!-- Order summary -->
+        <aside class="lg:sticky lg:top-24">
+          <UCard>
+            <template #header>
+              <div>
+                <p class="text-lg font-semibold text-highlighted">
+                  Order Summary
+                </p>
 
+                <p class="mt-1 text-sm text-muted">
+                  {{ cartCount }} item(s) in your order
+                </p>
+              </div>
+            </template>
+
+            <div class="space-y-5">
+              <div
+                v-for="item in cart"
+                :key="item.product.id"
+                class="flex gap-4"
+              >
+                <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                  <UIcon
+                    name="i-lucide-book-open"
+                    class="size-5 text-primary"
+                  />
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <p class="font-medium text-highlighted">
+                    {{ item.product.name }}
+                  </p>
+
+                  <p class="mt-1 text-sm text-muted">
+                    {{ item.quantity }} × KES {{ item.product.price }}
+                  </p>
+                </div>
+
+                <p class="shrink-0 font-semibold text-highlighted">
+                  KES {{ item.product.price * item.quantity }}
+                </p>
+              </div>
+
+              <div class="border-t border-default pt-5">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-muted">
+                    Items
+                  </span>
+
+                  <span class="text-sm font-medium">
+                    {{ cartCount }}
+                  </span>
+                </div>
+
+                <div class="mt-4 flex items-end justify-between gap-4">
+                  <span class="font-semibold">
+                    Total
+                  </span>
+
+                  <span class="text-2xl font-bold text-highlighted">
+                    KES {{ totalPrice }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <template #footer>
+              <div class="space-y-3">
                 <UButton
                   block
                   size="lg"
@@ -223,9 +301,21 @@ const handleCheckout = async () => {
                 >
                   Pay with M-Pesa
                 </UButton>
+
+                <UButton
+                  to="/cart"
+                  color="neutral"
+                  variant="outline"
+                  block
+                  leading-icon="i-lucide-arrow-left"
+                >
+                  Back to Cart
+                </UButton>
               </div>
             </template>
-      </UCard>
-    </div>
-  </UPageSection>
+          </UCard>
+        </aside>
+      </div>
+    </section>
+  </main>
 </template>
