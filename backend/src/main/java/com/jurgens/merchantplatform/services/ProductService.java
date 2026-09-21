@@ -1,5 +1,7 @@
 package com.jurgens.merchantplatform.services;
 
+import com.jurgens.merchantplatform.dto.CreateProductRequest;
+import com.jurgens.merchantplatform.dto.UpdateProductRequest;
 import com.jurgens.merchantplatform.entities.Category;
 import com.jurgens.merchantplatform.entities.Product;
 import com.jurgens.merchantplatform.exceptions.ResourceNotFoundException;
@@ -21,13 +23,21 @@ public class ProductService {
         this.categoryRepository = categoryRepository;
     }
 
-    public Product createProduct(Long categoryId, Product product) {
-        Category category = categoryRepository.findById(categoryId)
+    public Product createProduct(CreateProductRequest request) {
+
+        Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Category not found with id: " + categoryId
+                                "Category not found with id: " + request.getCategoryId()
                         ));
 
+        Product product = new Product();
+
+        product.setName(request.getName());
+        product.setDescription(request.getDescription());
+        product.setPrice(request.getPrice());
+        product.setStockQuantity(request.getStockQuantity());
+        product.setImageUrl(request.getImageUrl());
         product.setCategory(category);
 
         return productRepository.save(product);
@@ -49,14 +59,15 @@ public class ProductService {
                         ));
     }
 
-    public Product updateProduct(Long id, Product productDetails) {
+    public Product updateProduct(Long id, UpdateProductRequest request) {
+
         Product existingProduct = getProductById(id);
 
-        existingProduct.setName(productDetails.getName());
-        existingProduct.setDescription(productDetails.getDescription());
-        existingProduct.setPrice(productDetails.getPrice());
-        existingProduct.setStockQuantity(productDetails.getStockQuantity());
-        existingProduct.setImageUrl(productDetails.getImageUrl());
+        existingProduct.setName(request.getName());
+        existingProduct.setDescription(request.getDescription());
+        existingProduct.setPrice(request.getPrice());
+        existingProduct.setStockQuantity(request.getStockQuantity());
+        existingProduct.setImageUrl(request.getImageUrl());
 
         return productRepository.save(existingProduct);
     }

@@ -1,5 +1,7 @@
 package com.jurgens.merchantplatform.controllers;
 
+import com.jurgens.merchantplatform.dto.CreateProductRequest;
+import com.jurgens.merchantplatform.dto.UpdateProductRequest;
 import com.jurgens.merchantplatform.entities.Product;
 import com.jurgens.merchantplatform.services.ProductService;
 import org.springframework.http.HttpStatus;
@@ -11,7 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -28,10 +29,9 @@ public class ProductController {
 
     @PostMapping
     public ResponseEntity<Product> createProduct(
-            @RequestParam Long categoryId,
-            @RequestBody Product product) {
+            @RequestBody CreateProductRequest request) {
 
-        Product created = productService.createProduct(categoryId, product);
+        Product created = productService.createProduct(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -58,10 +58,10 @@ public class ProductController {
     @PutMapping("/{id}")
     public ResponseEntity<Product> updateProduct(
             @PathVariable Long id,
-            @RequestBody Product product) {
+            @RequestBody UpdateProductRequest request) {
 
         return ResponseEntity.ok(
-                productService.updateProduct(id, product)
+                productService.updateProduct(id, request)
         );
     }
 
