@@ -1,5 +1,11 @@
 <script setup lang="ts">
 const { cartCount } = useCart()
+
+const mobileMenuOpen = ref(false)
+
+const closeMobileMenu = () => {
+  mobileMenuOpen.value = false
+}
 </script>
 
 <template>
@@ -11,6 +17,7 @@ const { cartCount } = useCart()
       <NuxtLink
         to="/"
         class="group flex items-center gap-3"
+        @click="closeMobileMenu"
       >
         <div
           class="flex size-10 items-center justify-center rounded-xl bg-primary text-white transition-transform duration-200 group-hover:scale-105"
@@ -32,7 +39,7 @@ const { cartCount } = useCart()
         </div>
       </NuxtLink>
 
-      <!-- Navigation -->
+      <!-- Desktop navigation -->
       <nav class="hidden items-center gap-1 md:flex">
         <UButton
           to="/"
@@ -51,26 +58,112 @@ const { cartCount } = useCart()
         </UButton>
       </nav>
 
-      <!-- Cart -->
-      <UButton
-        to="/cart"
-        color="neutral"
-        variant="outline"
-        icon="i-lucide-shopping-cart"
-        class="rounded-full"
-      >
-        <span class="hidden sm:inline">
-          Cart
-        </span>
-
-        <UBadge
-          color="primary"
-          variant="solid"
-          size="sm"
+      <!-- Actions -->
+      <div class="flex items-center gap-2">
+        <!-- Desktop cart -->
+        <UButton
+          to="/cart"
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-shopping-cart"
+          class="hidden rounded-full sm:flex"
         >
-          {{ cartCount }}
-        </UBadge>
-      </UButton>
+          Cart
+
+          <UBadge
+            color="primary"
+            variant="solid"
+            size="sm"
+          >
+            {{ cartCount }}
+          </UBadge>
+        </UButton>
+
+        <!-- Mobile cart -->
+        <UButton
+          to="/cart"
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-shopping-cart"
+          class="rounded-full sm:hidden"
+          aria-label="Shopping cart"
+        >
+          <UBadge
+            color="primary"
+            variant="solid"
+            size="sm"
+          >
+            {{ cartCount }}
+          </UBadge>
+        </UButton>
+
+        <!-- Mobile menu -->
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-menu"
+          class="rounded-full md:hidden"
+          aria-label="Open navigation menu"
+          @click="mobileMenuOpen = true"
+        />
+      </div>
     </div>
   </header>
+
+  <!-- Mobile navigation -->
+  <USlideover
+    v-model:open="mobileMenuOpen"
+    title="Menu"
+    description="Navigate around BookStore"
+  >
+    <template #body>
+      <nav class="space-y-2">
+        <UButton
+          to="/"
+          block
+          color="neutral"
+          variant="ghost"
+          leading-icon="i-lucide-book-open"
+          class="justify-start"
+          @click="closeMobileMenu"
+        >
+          Books
+        </UButton>
+
+        <UButton
+          to="/#products"
+          block
+          color="neutral"
+          variant="ghost"
+          leading-icon="i-lucide-library"
+          class="justify-start"
+          @click="closeMobileMenu"
+        >
+          Collection
+        </UButton>
+
+        <UButton
+          to="/cart"
+          block
+          color="neutral"
+          variant="ghost"
+          leading-icon="i-lucide-shopping-cart"
+          class="justify-start"
+          @click="closeMobileMenu"
+        >
+          <span class="flex w-full items-center justify-between">
+            <span>Cart</span>
+
+            <UBadge
+              color="primary"
+              variant="solid"
+              size="sm"
+            >
+              {{ cartCount }}
+            </UBadge>
+          </span>
+        </UButton>
+      </nav>
+    </template>
+  </USlideover>
 </template>
