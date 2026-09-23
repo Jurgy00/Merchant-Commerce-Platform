@@ -13,6 +13,7 @@ const categories = [
   'Children'
 ]
 
+const searchQuery = ref('')
 const selectedCategory = ref('All')
 const maxPrice = ref(4000)
 
@@ -24,7 +25,15 @@ const {
 const toast = useToast()
 
 const filteredProducts = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+
   return products.filter((product) => {
+    const matchesSearch =
+      !query ||
+      product.name.toLowerCase().includes(query) ||
+      product.description.toLowerCase().includes(query) ||
+      product.category.toLowerCase().includes(query)
+
     const matchesCategory =
       selectedCategory.value === 'All' ||
       product.category === selectedCategory.value
@@ -32,7 +41,7 @@ const filteredProducts = computed(() => {
     const matchesPrice =
       product.price <= maxPrice.value
 
-    return matchesCategory && matchesPrice
+    return matchesSearch && matchesCategory && matchesPrice
   })
 })
 
@@ -174,7 +183,21 @@ const resetFilters = () => {
         <div
           class="flex flex-col gap-4 lg:flex-row lg:items-end"
         >
+          <!-- Search -->
+          <div class="flex-1 lg:min-w-[260px]">
+            <label
+              class="mb-2 block text-sm font-medium"
+            >
+              Search books
+            </label>
 
+            <UInput
+              v-model="searchQuery"
+              placeholder="Search by title, category..."
+              icon="i-lucide-search"
+              class="w-full"
+            />
+          </div>
           <!-- Category -->
           <div class="flex-1">
             <label
