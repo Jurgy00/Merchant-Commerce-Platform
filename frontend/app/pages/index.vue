@@ -16,6 +16,7 @@ const categories = [
 const searchQuery = ref('')
 const selectedCategory = ref('All')
 const maxPrice = ref(4000)
+const sortBy = ref('default')
 
 const {
   addToCart,
@@ -27,7 +28,7 @@ const toast = useToast()
 const filteredProducts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
 
-  return products.filter((product) => {
+  const filtered = products.filter((product) => {
     const matchesSearch =
       !query ||
       product.name.toLowerCase().includes(query) ||
@@ -43,6 +44,16 @@ const filteredProducts = computed(() => {
 
     return matchesSearch && matchesCategory && matchesPrice
   })
+
+  if (sortBy.value === 'price-low') {
+    return [...filtered].sort((a, b) => a.price - b.price)
+  }
+
+  if (sortBy.value === 'price-high') {
+    return [...filtered].sort((a, b) => b.price - a.price)
+  }
+
+  return filtered
 })
 
 const handleAddToCart = (product: Product) => {
@@ -54,10 +65,11 @@ const handleAddToCart = (product: Product) => {
     icon: 'i-lucide-check-circle'
   })
 }
-
 const resetFilters = () => {
+  searchQuery.value = ''
   selectedCategory.value = 'All'
   maxPrice.value = 4000
+  sortBy.value = 'default'
 }
 </script>
 
@@ -231,9 +243,21 @@ const resetFilters = () => {
               class="w-full"
             />
           </div>
+                <!-- Sort -->
+                <div class="flex-1">
+                  <label class="mb-2 block text-sm font-medium">Sort by</label>
 
-
-          <!-- Reset -->
+                  <USelect
+                    v-model="sortBy"
+                    :items="[
+                      { label: 'Default', value: 'default' },
+                      { label: 'Price: Low to High', value: 'price-low' },
+                      { label: 'Price: High to Low', value: 'price-high' }
+                    ]"
+                    class="w-full"
+                  />
+                </div>
+                          <!-- Reset -->
           <UButton
             color="neutral"
             variant="outline"
