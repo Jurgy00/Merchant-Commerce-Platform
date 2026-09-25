@@ -1,6 +1,7 @@
 package com.jurgens.merchantplatform.controllers;
 
-import com.jurgens.merchantplatform.entities.Order;
+import com.jurgens.merchantplatform.dto.CreateOrderRequest;
+import com.jurgens.merchantplatform.dto.OrderResponse;
 import com.jurgens.merchantplatform.services.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,18 +20,31 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<Order> createOrder(@RequestBody Order order) {
-        Order createdOrder = orderService.createOrder(order);
-        return new ResponseEntity<>(createdOrder, HttpStatus.CREATED);
+    public ResponseEntity<OrderResponse> createOrder(
+            @RequestBody CreateOrderRequest request) {
+
+        OrderResponse createdOrder =
+                orderService.createOrder(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(createdOrder);
     }
 
     @GetMapping
-    public ResponseEntity<List<Order>> getAllOrders() {
-        return ResponseEntity.ok(orderService.getAllOrders());
+    public ResponseEntity<List<OrderResponse>> getAllOrders() {
+
+        return ResponseEntity.ok(
+                orderService.getAllOrders()
+        );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrderById(@PathVariable Long id) {
-        return ResponseEntity.ok(orderService.getOrderById(id));
+    public ResponseEntity<OrderResponse> getOrderById(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                orderService.getOrderById(id)
+        );
     }
 }
