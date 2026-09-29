@@ -1,3 +1,4 @@
+
 import type { Product } from '~/data/products'
 
 export interface CartItem {
@@ -5,8 +6,44 @@ export interface CartItem {
   quantity: number
 }
 
+const CART_STORAGE_KEY = 'merchant-commerce-cart'
+
 export const useCart = () => {
   const cart = useState<CartItem[]>('cart', () => [])
+
+  // Restore the cart from localStorage when the app mounts in the browser.
+  onMounted(() => {
+    const savedCart = localStorage.getItem(CART_STORAGE_KEY)
+
+    if (!savedCart) {
+      return
+    }
+
+    try {
+      const parsedCart = JSON.parse(savedCart) as CartItem[]
+
+      if (Array.isArray(parsedCart)) {
+        cart.value = parsedCart
+      }
+    } catch {
+      // Ignore invalid saved data and start with an empty cart.
+      localStorage.removeItem(CART_STORAGE_KEY)
+    }
+  })
+
+  // Save the cart whenever its contents or quantities change.
+  watch(
+    cart,
+    (newCart) => {
+      if (import.meta.client) {
+        localStorage.setItem(
+          CART_STORAGE_KEY,
+          JSON.stringify(newCart)
+        )
+      }
+    },
+    { deep: true }
+  )
 
   const addToCart = (product: Product) => {
     const existingItem = cart.value.find(
@@ -17,7 +54,7 @@ export const useCart = () => {
       if (existingItem.quantity < product.stock) {
         existingItem.quantity++
       }
-    } else {
+    } else if (product.stock > 0) {
       cart.value.push({
         product,
         quantity: 1
@@ -50,9 +87,10 @@ export const useCart = () => {
 
     item.quantity = newQuantity
   }
+
   const clearCart = () => {
-      cart.value = []
-    }
+    cart.value = []
+  }
 
   const cartCount = computed(() => {
     return cart.value.reduce((total, item) => {
