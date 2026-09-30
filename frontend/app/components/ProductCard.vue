@@ -97,7 +97,7 @@ const handleAddToCart = (product: Product) => {
     </NuxtLink>
 
     <!-- Product information -->
-    <div class="p-5">
+    <div class="p-4">
       <p
         class="text-xs font-semibold uppercase tracking-widest text-primary"
       >
@@ -129,10 +129,9 @@ const handleAddToCart = (product: Product) => {
           <p class="text-xl font-bold text-highlighted">
             KES {{ product.price }}
           </p>
-
-          <p class="mt-1 text-xs text-muted">
-            In stock
-          </p>
+            <p class="mt-1 text-xs text-muted">
+              {{ product.stock === 0 ? 'Out of stock' : 'In stock' }}
+            </p>
         </div>
 
         <div
@@ -155,26 +154,30 @@ const handleAddToCart = (product: Product) => {
     </div>
 
     <!-- Actions -->
-    <template #footer>
-      <div class="grid grid-cols-2 gap-2">
-        <UButton
-          :to="`/products/${product.id}`"
-          color="neutral"
-          variant="outline"
-          block
-        >
-          View Details
-        </UButton>
+   <template #footer>
+  <div class="grid grid-cols-2 gap-2">
+    <UButton
+      :to="`/products/${product.id}`"
+      color="neutral"
+      variant="outline"
+      block
+      size="sm"
+      class="min-w-0 whitespace-nowrap px-2 text-xs"
+    >
+      Details
+    </UButton>
 
-        <UButton
-          block
-          icon="i-lucide-shopping-cart"
-          :disabled="product.stock === 0"
-          @click="handleAddToCart(product)"
-        >
-          Add to Cart
-        </UButton>
-      </div>
-    </template>
+    <UButton
+      block
+      size="sm"
+      icon="i-lucide-shopping-cart"
+      :disabled="product.stock === 0"
+      class="min-w-0 whitespace-nowrap px-2 text-xs"
+      @click="handleAddToCart(product)"
+    >
+      Add to Cart
+    </UButton>
+  </div>
+</template>
   </UCard>
 </template>
