@@ -65,7 +65,7 @@ const resetFilters = () => {
       class="relative overflow-hidden border-b border-default"
     >
       <div
-        class="mx-auto flex min-h-[42vh] max-w-5xl items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8"
+        class="mx-auto flex min-h-[28vh] max-w-5xl items-center justify-center px-4 py-10 text-center sm:px-6 sm:py-12 lg:px-8"
       >
         <div class="max-w-3xl">
 
@@ -81,7 +81,7 @@ const resetFilters = () => {
           </div>
 
           <h1
-            class="text-5xl font-black tracking-tight text-highlighted sm:text-6xl lg:text-7xl"
+            class="text-4xl font-black tracking-tight text-highlighted sm:text-5xl lg:text-6xl"
           >
             Find your next
             <span class="text-primary">
@@ -90,7 +90,7 @@ const resetFilters = () => {
           </h1>
 
           <p
-            class="mx-auto mt-6 max-w-2xl text-lg leading-8 text-muted sm:text-xl"
+            class="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted sm:text-lg"
           >
             Discover books across fiction, business, technology,
             self-development and more. Whether you're looking to learn,
@@ -99,7 +99,7 @@ const resetFilters = () => {
           </p>
 
           <div
-            class="mt-8 flex flex-col justify-center gap-3 sm:flex-row"
+            class="mt-6 flex flex-col justify-center gap-3 sm:flex-row"
           >
             <UButton
               to="#products"
@@ -130,10 +130,10 @@ const resetFilters = () => {
     <!-- ================================
          PRODUCTS
     ================================= -->
-    <main
-      id="products"
-      class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"
-    >
+          <main
+        id="products"
+        class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8"
+      >
 
       <!-- Section heading -->
       <div
@@ -172,7 +172,7 @@ const resetFilters = () => {
            FILTER BAR
       ================================= -->
       <div
-        class="mt-8 rounded-2xl border border-default bg-elevated/50 p-4"
+        class="mt-6 rounded-2xl border border-default bg-elevated/50 p-4"
       >
         <div
           class="flex flex-col gap-4 lg:flex-row lg:items-end"
@@ -259,7 +259,7 @@ const resetFilters = () => {
       ================================= -->
      <div
   v-if="filteredProducts.length > 0"
-  class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+  class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 >
       <ProductCard
         v-for="product in filteredProducts"
@@ -401,62 +401,5 @@ const resetFilters = () => {
 
       </div>
     </section>
-
-
-    <!-- ================================
-         FINAL CTA
-    ================================= -->
-    <section
-      class="mx-auto max-w-5xl px-4 py-20 text-center sm:px-6 lg:px-8"
-    >
-      <div
-        class="rounded-3xl border border-default bg-elevated px-6 py-14 sm:px-12"
-      >
-
-        <UIcon
-          name="i-lucide-book-marked"
-          class="mx-auto size-10 text-primary"
-        />
-
-        <h2
-          class="mt-5 text-3xl font-bold tracking-tight text-highlighted sm:text-4xl"
-        >
-          Your next book is waiting.
-        </h2>
-
-        <p
-          class="mx-auto mt-4 max-w-xl text-muted"
-        >
-          Take another look through the collection and find
-          something worth adding to your shelf.
-        </p>
-
-        <div
-          class="mt-7 flex flex-col justify-center gap-3 sm:flex-row"
-        >
-          <UButton
-            to="#products"
-            size="lg"
-            icon="i-lucide-book-open"
-            class="rounded-full px-7"
-          >
-            Browse Collection
-          </UButton>
-
-          <UButton
-            to="/cart"
-            size="lg"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-shopping-cart"
-            class="rounded-full px-7"
-          >
-            View Cart
-          </UButton>
-        </div>
-
-      </div>
-    </section>
-
   </div>
 </template>
