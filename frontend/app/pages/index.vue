@@ -69,17 +69,6 @@ const resetFilters = () => {
       >
         <div class="max-w-3xl">
 
-          <div
-            class="mb-6 inline-flex items-center gap-2 rounded-full border border-default bg-elevated px-4 py-2 text-sm text-muted"
-          >
-            <UIcon
-              name="i-lucide-sparkles"
-              class="size-4 text-primary"
-            />
-
-            <span>Curated books for curious minds</span>
-          </div>
-
           <h1
             class="text-4xl font-black tracking-tight text-highlighted sm:text-5xl lg:text-6xl"
           >
@@ -167,92 +156,87 @@ const resetFilters = () => {
         </p>
       </div>
 
+<!-- ================================
+     FILTER BAR
+================================= -->
+<div class="mt-6 rounded-2xl border border-default bg-elevated/50 p-4">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6 xl:items-end">
 
-      <!-- ================================
-           FILTER BAR
-      ================================= -->
-      <div
-        class="mt-6 rounded-2xl border border-default bg-elevated/50 p-4"
+    <!-- Search -->
+    <div class="min-w-0 sm:col-span-2 xl:col-span-2">
+      <label class="mb-2 block text-sm font-medium">
+        Search books
+      </label>
+
+      <UInput
+        v-model="searchQuery"
+        placeholder="Search by title, category..."
+        icon="i-lucide-search"
+        class="w-full"
+      />
+    </div>
+
+    <!-- Category -->
+    <div class="min-w-0">
+      <label class="mb-2 block text-sm font-medium">
+        Category
+      </label>
+
+      <USelect
+        v-model="selectedCategory"
+        :items="categories"
+        class="w-full"
+      />
+    </div>
+
+    <!-- Maximum price -->
+    <div class="min-w-0">
+      <label class="mb-2 block text-sm font-medium">
+        Maximum price
+      </label>
+
+      <UInput
+        v-model="maxPrice"
+        type="number"
+        min="0"
+        placeholder="4000"
+        icon="i-lucide-tag"
+        class="w-full"
+      />
+    </div>
+
+    <!-- Sort -->
+    <div class="min-w-0">
+      <label class="mb-2 block text-sm font-medium">
+        Sort by
+      </label>
+
+      <USelect
+        v-model="sortBy"
+        :items="[
+          { label: 'Default', value: 'default' },
+          { label: 'Price: Low to High', value: 'price-low' },
+          { label: 'Price: High to Low', value: 'price-high' }
+        ]"
+        class="w-full"
+      />
+    </div>
+
+    <!-- Reset -->
+    <div class="flex items-end">
+      <UButton
+        color="neutral"
+        variant="outline"
+        icon="i-lucide-rotate-ccw"
+        class="w-full justify-center sm:w-auto"
+        @click="resetFilters"
       >
-        <div
-          class="flex flex-col gap-4 lg:flex-row lg:items-end"
-        >
-          <!-- Search -->
-          <div class="flex-1 lg:min-w-[260px]">
-            <label
-              class="mb-2 block text-sm font-medium"
-            >
-              Search books
-            </label>
+        Reset
+      </UButton>
+    </div>
 
-            <UInput
-              v-model="searchQuery"
-              placeholder="Search by title, category..."
-              icon="i-lucide-search"
-              class="w-full"
-            />
-          </div>
-          <!-- Category -->
-          <div class="flex-1">
-            <label
-              class="mb-2 block text-sm font-medium"
-            >
-              Category
-            </label>
-
-            <USelect
-              v-model="selectedCategory"
-              :items="categories"
-              class="w-full"
-            />
-          </div>
-
-
-          <!-- Price -->
-          <div class="flex-1">
-            <label
-              class="mb-2 block text-sm font-medium"
-            >
-              Maximum price
-            </label>
-
-            <UInput
-              v-model="maxPrice"
-              type="number"
-              min="0"
-              placeholder="4000"
-              icon="i-lucide-tag"
-              class="w-full"
-            />
-          </div>
-                <!-- Sort -->
-                <div class="flex-1">
-                  <label class="mb-2 block text-sm font-medium">Sort by</label>
-
-                  <USelect
-                    v-model="sortBy"
-                    :items="[
-                      { label: 'Default', value: 'default' },
-                      { label: 'Price: Low to High', value: 'price-low' },
-                      { label: 'Price: High to Low', value: 'price-high' }
-                    ]"
-                    class="w-full"
-                  />
-                </div>
-                          <!-- Reset -->
-          <UButton
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-rotate-ccw"
-            class="lg:mb-0"
-            @click="resetFilters"
-          >
-            Reset
-          </UButton>
-
-        </div>
-      </div>
-
+  </div>
+</div>
 
       <!-- ================================
            PRODUCT GRID
@@ -318,11 +302,11 @@ const resetFilters = () => {
       class="border-y border-default bg-elevated/30"
     >
       <div
-        class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+        class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8"
       >
 
         <div
-          class="grid gap-8 md:grid-cols-3"
+          class="grid gap-6 md:grid-cols-3"
         >
 
           <div
