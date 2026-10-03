@@ -411,7 +411,7 @@ const handleBuyNow = () => {
       >
 
         <div
-          class="grid gap-12 lg:grid-cols-[1.4fr_0.6fr]"
+          class="mx-auto max-w-2xl"
         >
 
           <!-- Description -->
@@ -472,17 +472,24 @@ const handleBuyNow = () => {
                 </span>
               </div>
 
-              <div
-                class="flex items-center justify-between gap-4 px-5 py-4"
-              >
-                <span class="text-sm text-muted">
-                  Availability
-                </span>
+             <div
+              class="flex items-center justify-between gap-4 px-5 py-4"
+            >
+              <span class="text-sm text-muted">
+                Availability
+              </span>
 
-                <span class="text-sm font-semibold text-highlighted">
-                  {{ product.stock }} in stock
-                </span>
-              </div>
+              <span
+                class="text-sm font-semibold"
+                :class="remainingStock > 0 ? 'text-success' : 'text-error'"
+              >
+                {{
+                  remainingStock > 0
+                    ? `${remainingStock} available`
+                    : 'Currently unavailable'
+                }}
+              </span>
+            </div>
 
             </div>
           </div>
