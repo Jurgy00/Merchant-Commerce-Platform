@@ -1,9 +1,13 @@
-package com.jurgens.merchantplatform.controllers;
 
-import com.jurgens.merchantplatform.entities.Payment;
+        package com.jurgens.merchantplatform.controllers;
+
+import com.jurgens.merchantplatform.dto.PaymentRequest;
+import com.jurgens.merchantplatform.dto.PaymentResponse;
 import com.jurgens.merchantplatform.services.PaymentService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -17,22 +21,35 @@ public class PaymentController {
     }
 
     @PostMapping("/stk-push")
-    public Payment initiateStkPush(
-            @RequestParam Long orderId,
-            @RequestParam String phoneNumber
+    public ResponseEntity<PaymentResponse> initiateStkPush(
+            @RequestBody PaymentRequest request
     ) {
 
-        return paymentService.initiatePayment(
-                orderId,
-                phoneNumber
+        return ResponseEntity.ok(
+                paymentService.initiatePayment(request)
         );
     }
+
     @GetMapping
-    public java.util.List<Payment> getAllPayments() {
-        return paymentService.getAllPayments();
+    public ResponseEntity<List<PaymentResponse>> getAllPayments() {
+
+        return ResponseEntity.ok(
+                paymentService.getAllPayments()
+        );
     }
+
+    @GetMapping("/order/{orderId}")
+    public ResponseEntity<List<PaymentResponse>> getPaymentsByOrderId(
+            @PathVariable Long orderId
+    ) {
+
+        return ResponseEntity.ok(
+                paymentService.getPaymentsByOrderId(orderId)
+        );
+    }
+
     @PostMapping("/mpesa/callback")
-    public String mpesaCallback(
+    public ResponseEntity<Void> mpesaCallback(
             @RequestBody Map<String, Object> callback
     ) {
 
@@ -41,12 +58,7 @@ public class PaymentController {
 
         paymentService.processMpesaCallback(callback);
 
-        return "Callback received";
-    }
-    @GetMapping("/order/{orderId}")
-    public java.util.List<Payment> getPaymentsByOrderId(
-            @PathVariable Long orderId
-    ) {
-        return paymentService.getPaymentsByOrderId(orderId);
+        return ResponseEntity.ok().build();
     }
 }
+

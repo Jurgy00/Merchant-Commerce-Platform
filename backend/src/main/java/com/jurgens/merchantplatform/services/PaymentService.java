@@ -1,6 +1,8 @@
 
         package com.jurgens.merchantplatform.services;
 
+import com.jurgens.merchantplatform.dto.PaymentRequest;
+import com.jurgens.merchantplatform.dto.PaymentResponse;
 import com.jurgens.merchantplatform.entities.Order;
 import com.jurgens.merchantplatform.entities.OrderStatus;
 import com.jurgens.merchantplatform.entities.Payment;
@@ -37,10 +39,10 @@ public class PaymentService {
         this.productRepository = productRepository;
     }
 
-    public Payment initiatePayment(
-            Long orderId,
-            String phoneNumber
-    ) {
+    public PaymentResponse initiatePayment(PaymentRequest request) {
+
+        Long orderId = request.getOrderId();
+        String phoneNumber = request.getPhoneNumber();
 
         if (phoneNumber == null || phoneNumber.isBlank()) {
             throw new IllegalArgumentException(
@@ -100,7 +102,9 @@ public class PaymentService {
                 response.ResponseDescription()
         );
 
-        return paymentRepository.save(payment);
+        Payment savedPayment = paymentRepository.save(payment);
+
+        return convertToResponse(savedPayment);
     }
 
     public void processMpesaCallback(
@@ -258,11 +262,42 @@ public class PaymentService {
         paymentRepository.save(payment);
     }
 
-    public List<Payment> getAllPayments() {
-        return paymentRepository.findAll();
+    public List<PaymentResponse> getAllPayments() {
+        return paymentRepository.findAll()
+                .stream()
+                .map(this::convertToResponse)
+                .toList();
     }
 
-    public List<Payment> getPaymentsByOrderId(Long orderId) {
-        return paymentRepository.findByOrderId(orderId);
+    public List<PaymentResponse> getPaymentsByOrderId(Long orderId) {
+        return paymentRepository.findByOrderId(orderId)
+                .stream()
+                .map(this::convertToResponse)
+                .toList();
+    }
+
+    private PaymentResponse convertToResponse(Payment payment) {
+
+        PaymentResponse response = new PaymentResponse();
+
+        response.setId(payment.getId());
+        response.setOrderId(payment.getOrder().getId());
+        response.setAmount(payment.getAmount());
+        response.setPhoneNumber(payment.getPhoneNumber());
+        response.setStatus(payment.getStatus());
+        response.setMpesaReceiptNumber(
+                payment.getMpesaReceiptNumber()
+        );
+        response.setCheckoutRequestId(
+                payment.getCheckoutRequestId()
+        );
+        response.setResultDesc(
+                payment.getResultDesc()
+        );
+
+        return response;
     }
 }
+
+
+
