@@ -1,4 +1,5 @@
-package com.jurgens.merchantplatform.services;
+
+        package com.jurgens.merchantplatform.services;
 
 import com.jurgens.merchantplatform.dto.CreateOrderRequest;
 import com.jurgens.merchantplatform.dto.OrderItemRequest;
@@ -14,6 +15,7 @@ import com.jurgens.merchantplatform.repositories.MerchantRepository;
 import com.jurgens.merchantplatform.repositories.OrderRepository;
 import com.jurgens.merchantplatform.repositories.ProductRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -34,6 +36,7 @@ public class OrderService {
         this.merchantRepository = merchantRepository;
     }
 
+    @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
 
         Merchant merchant = merchantRepository.findById(request.getMerchantId())
@@ -144,3 +147,4 @@ public class OrderService {
         return response;
     }
 }
+
