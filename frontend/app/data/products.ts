@@ -19,7 +19,7 @@ export const products: Product[] = [
     category: 'Self Development',
     stock: 12,
     author: 'James Clear',
-    image: '/books/atomic-habits.svg',
+    image: '/books/atomic-habits.jpg',
     badge: 'Bestseller'
   },
   {
@@ -30,7 +30,7 @@ export const products: Product[] = [
     category: 'Technology',
     stock: 5,
     author: 'Robert C. Martin',
-    image: '/books/clean-code.svg',
+    image: '/books/clean-code.jpg',
     badge: 'Developer Pick'
   },
   {
@@ -41,7 +41,7 @@ export const products: Product[] = [
     category: 'Business',
     stock: 8,
     author: 'Cal Newport',
-    image: '/books/deep-work.svg',
+    image: '/books/deep-work.jpg',
     badge: 'Popular'
   },
   {
@@ -52,7 +52,7 @@ export const products: Product[] = [
     category: 'Business',
     stock: 10,
     author: 'Morgan Housel',
-    image: '/books/psychology-money.svg',
+    image: '/books/psychology-money.jpg',
     badge: 'Popular'
   },
 
@@ -64,7 +64,7 @@ export const products: Product[] = [
     category: 'Fiction',
     stock: 18,
     author: 'George Orwell',
-    image: '/books/1984.svg'
+    image: '/books/1984.jpg'
   },
   {
     id: 8,
@@ -74,7 +74,7 @@ export const products: Product[] = [
     category: 'Fiction',
     stock: 9,
     author: 'Yuval Noah Harari',
-    image: '/books/sapiens.svg',
+    image: '/books/sapiens.jpg',
     badge: 'Bestseller'
   },
   {
@@ -85,7 +85,7 @@ export const products: Product[] = [
     category: 'Fiction',
     stock: 15,
     author: 'Paulo Coelho',
-    image: '/books/alchemist.svg'
+    image: '/books/alchemist.jpg'
   },
   {
     id: 10,
@@ -95,7 +95,7 @@ export const products: Product[] = [
     category: 'Business',
     stock: 11,
     author: 'Robert T. Kiyosaki',
-    image: '/books/rich-dad-poor-dad.svg'
+    image: '/books/rich-dad-poor-dad.jpg'
   },
   {
     id: 11,
@@ -105,7 +105,7 @@ export const products: Product[] = [
     category: 'Business',
     stock: 7,
     author: 'Simon Sinek',
-    image: '/books/start-with-why.svg'
+    image: '/books/start-with-why.jpg'
   },
   {
     id: 12,
@@ -115,7 +115,7 @@ export const products: Product[] = [
     category: 'Technology',
     stock: 4,
     author: 'Steve Krug',
-    image: '/books/dont-make-me-think.svg',
+    image: '/books/dont-make-me-think.jpg',
     badge: 'UX Classic'
   }
 ]

@@ -17,6 +17,35 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2026-06-30',
 
+  icon: {
+    clientBundle: {
+      scan: true,
+      icons: [
+        'lucide:book-open',
+        'lucide:shopping-bag',
+        'lucide:tag',
+        'lucide:search',
+        'lucide:menu',
+        'lucide:check',
+        'lucide:plus',
+        'lucide:minus',
+        'lucide:arrow-up',
+        'lucide:arrow-left',
+        'lucide:arrow-right',
+        'lucide:shopping-cart',
+        'lucide:map-pin',
+        'lucide:user',
+        'lucide:smartphone',
+        'lucide:shield-check',
+        'lucide:search-x',
+        'lucide:trash-2',
+        'lucide:circle-alert',
+        'lucide:check-circle',
+        'lucide:chevron-down'
+      ]
+    }
+  },
+
   eslint: {
     config: {
       stylistic: {
