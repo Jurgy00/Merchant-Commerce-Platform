@@ -1,16 +1,9 @@
 <script setup lang="ts">
 const { cartCount } = useCart()
 
-const {
-  categories,
-  searchQuery,
-  selectedCategory,
-  maxPrice,
-  sortBy,
-  resetFilters
-} = useStoreFilters()
-
 const mobileMenuOpen = ref(false)
+
+const searchQuery = useState('store-search', () => '')
 
 const closeMobileMenu = () => {
   mobileMenuOpen.value = false
@@ -18,363 +11,158 @@ const closeMobileMenu = () => {
 </script>
 
 <template>
-  <header
-    class="sticky top-0 z-50 border-b border-default bg-default/95 backdrop-blur"
-  >
-    <div class="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8">
+  <header class="sticky top-0 z-50 bg-default">
+    <!-- Utility bar -->
+    <div class="border-b border-default bg-elevated/30">
+      <div class="mx-auto flex h-8 max-w-[1800px] items-center justify-between px-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-muted sm:px-6 lg:px-8">
+        <span>Curated books for curious minds</span>
+        <span class="hidden sm:block">Kenya · Books delivered to you</span>
+      </div>
+    </div>
 
-      <!-- =================================
-           MAIN HEADER
-      ================================== -->
-      <div class="flex h-14 items-center justify-between gap-4">
-        <!-- Brand -->
+    <!-- Main header -->
+    <div class="border-b border-default">
+      <div class="mx-auto flex h-16 max-w-[1800px] items-center gap-5 px-4 sm:px-6 lg:px-8">
         <NuxtLink
           to="/"
-          class="group flex shrink-0 items-center gap-3"
+          class="flex shrink-0 items-center gap-2.5"
           @click="closeMobileMenu"
         >
-          <div
-            class="flex size-9 items-center justify-center rounded-lg bg-primary text-white transition-transform duration-200 group-hover:scale-105"
-          >
+          <div class="flex size-9 items-center justify-center rounded-full bg-primary text-white">
             <UIcon
               name="i-lucide-book-open"
               class="size-4.5"
             />
           </div>
 
-          <div>
-            <p class="text-lg font-bold tracking-tight text-highlighted">
+          <div class="hidden sm:block">
+            <p class="text-sm font-black tracking-tight text-highlighted">
               BookStore
             </p>
 
-            <p class="hidden text-xs text-muted sm:block">
+            <p class="text-[9px] text-muted">
               Read. Learn. Grow.
             </p>
           </div>
         </NuxtLink>
 
+        <nav class="hidden items-center gap-6 lg:flex">
+          <NuxtLink
+            to="/"
+            class="text-xs font-bold uppercase tracking-wide text-highlighted hover:text-primary"
+          >
+            Books
+          </NuxtLink>
 
-        <!-- Desktop navigation -->
-        <nav class="hidden items-center gap-1 md:flex">
+          <NuxtLink
+            to="/#products"
+            class="text-xs font-bold uppercase tracking-wide text-muted hover:text-primary"
+          >
+            Collection
+          </NuxtLink>
+        </nav>
+
+        <div class="ml-auto hidden max-w-xl flex-1 md:block">
+          <UInput
+            v-model="searchQuery"
+            icon="i-lucide-search"
+            placeholder="Search books, authors..."
+            size="sm"
+            class="w-full"
+          />
+        </div>
+
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-search"
+          class="md:hidden"
+          aria-label="Search"
+          @click="mobileMenuOpen = true"
+        />
+
+        <UButton
+          to="/cart"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-shopping-bag"
+          class="rounded-full"
+          aria-label="Shopping bag"
+        >
+          <span class="hidden text-xs font-semibold sm:inline">
+            Cart
+          </span>
+
+          <UBadge
+            v-if="cartCount > 0"
+            color="primary"
+            variant="solid"
+            size="sm"
+          >
+            {{ cartCount }}
+          </UBadge>
+        </UButton>
+
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-menu"
+          class="lg:hidden"
+          aria-label="Open menu"
+          @click="mobileMenuOpen = true"
+        />
+      </div>
+    </div>
+  </header>
+
+  <USlideover
+    v-model:open="mobileMenuOpen"
+    title="BookStore"
+    description="Browse the collection."
+  >
+    <template #body>
+      <div class="space-y-6">
+        <UInput
+          v-model="searchQuery"
+          icon="i-lucide-search"
+          placeholder="Search books, authors..."
+          class="w-full"
+        />
+
+        <nav class="flex flex-col gap-2">
           <UButton
             to="/"
+            block
             color="neutral"
             variant="ghost"
+            class="justify-start"
+            @click="closeMobileMenu"
           >
             Books
           </UButton>
 
           <UButton
             to="/#products"
+            block
             color="neutral"
             variant="ghost"
+            class="justify-start"
+            @click="closeMobileMenu"
           >
             Collection
           </UButton>
+
+          <UButton
+            to="/cart"
+            block
+            color="neutral"
+            variant="ghost"
+            class="justify-start"
+            @click="closeMobileMenu"
+          >
+            Shopping Bag
+          </UButton>
         </nav>
-
-
-        <!-- Actions -->
-        <div class="flex shrink-0 items-center gap-2">
-
-          <!-- Desktop cart -->
-          <UButton
-            to="/cart"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-shopping-cart"
-            class="hidden rounded-full sm:flex"
-          >
-            Cart
-
-            <UBadge
-              color="primary"
-              variant="solid"
-              size="sm"
-            >
-              {{ cartCount }}
-            </UBadge>
-          </UButton>
-
-
-          <!-- Mobile cart -->
-          <UButton
-            to="/cart"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-shopping-cart"
-            class="rounded-full sm:hidden"
-            aria-label="Shopping cart"
-          >
-            <UBadge
-              color="primary"
-              variant="solid"
-              size="sm"
-            >
-              {{ cartCount }}
-            </UBadge>
-          </UButton>
-
-
-          <!-- Mobile menu -->
-          <UButton
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-menu"
-            class="rounded-full md:hidden"
-            aria-label="Open navigation menu"
-            @click="mobileMenuOpen = true"
-          />
-        </div>
-      </div>
-
-
-      <!-- =================================
-           DESKTOP STORE FILTERS
-      ================================== -->
-      <div class="hidden border-t border-default py-2.5 md:block">
-        <div class="grid grid-cols-12 items-end gap-3">
-
-          <!-- Search -->
-          <div class="col-span-5 min-w-0">
-            <label class="mb-1 block text-xs font-medium text-muted">
-              Search books
-            </label>
-
-            <UInput
-              v-model="searchQuery"
-              placeholder="Search by title, description or category..."
-              icon="i-lucide-search"
-              class="w-full"
-            />
-          </div>
-
-
-          <!-- Category -->
-          <div class="col-span-2 min-w-0">
-            <label class="mb-1 block text-xs font-medium text-muted">
-              Category
-            </label>
-
-            <USelect
-              v-model="selectedCategory"
-              :items="categories"
-              class="w-full"
-            />
-          </div>
-
-
-          <!-- Max price -->
-          <div class="col-span-2 min-w-0">
-            <label class="mb-1 block text-xs font-medium text-muted">
-              Max price
-            </label>
-
-            <UInput
-              v-model="maxPrice"
-              type="number"
-              min="0"
-              placeholder="4000"
-              icon="i-lucide-tag"
-              class="w-full"
-            />
-          </div>
-
-
-          <!-- Sort -->
-          <div class="col-span-2 min-w-0">
-            <label class="mb-1 block text-xs font-medium text-muted">
-              Sort
-            </label>
-
-            <USelect
-              v-model="sortBy"
-              :items="[
-                { label: 'Default', value: 'default' },
-                { label: 'Price: Low to High', value: 'price-low' },
-                { label: 'Price: High to Low', value: 'price-high' }
-              ]"
-              class="w-full"
-            />
-          </div>
-
-
-          <!-- Reset -->
-          <div class="col-span-1">
-            <UButton
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-rotate-ccw"
-              class="w-full justify-center"
-              @click="resetFilters"
-            >
-              Reset
-            </UButton>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </header>
-
-
-  <!-- =================================
-       MOBILE NAVIGATION + FILTERS
-  ================================== -->
-  <USlideover
-    v-model:open="mobileMenuOpen"
-    title="BookStore"
-    description="Browse books and refine your search"
-  >
-    <template #body>
-      <div class="space-y-7">
-
-        <!-- Navigation -->
-        <div>
-          <p
-            class="mb-3 text-xs font-semibold uppercase tracking-widest text-muted"
-          >
-            Navigation
-          </p>
-
-          <nav class="space-y-2">
-            <UButton
-              to="/"
-              block
-              color="neutral"
-              variant="ghost"
-              leading-icon="i-lucide-book-open"
-              class="justify-start"
-              @click="closeMobileMenu"
-            >
-              Books
-            </UButton>
-
-            <UButton
-              to="/#products"
-              block
-              color="neutral"
-              variant="ghost"
-              leading-icon="i-lucide-library"
-              class="justify-start"
-              @click="closeMobileMenu"
-            >
-              Collection
-            </UButton>
-
-            <UButton
-              to="/cart"
-              block
-              color="neutral"
-              variant="ghost"
-              leading-icon="i-lucide-shopping-cart"
-              class="justify-start"
-              @click="closeMobileMenu"
-            >
-              <span class="flex w-full items-center justify-between">
-                <span>Cart</span>
-
-                <UBadge
-                  color="primary"
-                  variant="solid"
-                  size="sm"
-                >
-                  {{ cartCount }}
-                </UBadge>
-              </span>
-            </UButton>
-          </nav>
-        </div>
-
-
-        <!-- Filters -->
-        <div class="border-t border-default pt-6">
-          <div class="mb-4 flex items-center justify-between">
-            <p
-              class="text-xs font-semibold uppercase tracking-widest text-muted"
-            >
-              Filter books
-            </p>
-
-            <UButton
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              icon="i-lucide-rotate-ccw"
-              @click="resetFilters"
-            >
-              Reset
-            </UButton>
-          </div>
-
-          <div class="space-y-4">
-
-            <!-- Search -->
-            <div>
-              <label class="mb-1.5 block text-sm font-medium">
-                Search
-              </label>
-
-              <UInput
-                v-model="searchQuery"
-                placeholder="Search books..."
-                icon="i-lucide-search"
-                class="w-full"
-              />
-            </div>
-
-
-            <!-- Category -->
-            <div>
-              <label class="mb-1.5 block text-sm font-medium">
-                Category
-              </label>
-
-              <USelect
-                v-model="selectedCategory"
-                :items="categories"
-                class="w-full"
-              />
-            </div>
-
-
-            <!-- Max price -->
-            <div>
-              <label class="mb-1.5 block text-sm font-medium">
-                Maximum price
-              </label>
-
-              <UInput
-                v-model="maxPrice"
-                type="number"
-                min="0"
-                placeholder="4000"
-                icon="i-lucide-tag"
-                class="w-full"
-              />
-            </div>
-
-
-            <!-- Sort -->
-            <div>
-              <label class="mb-1.5 block text-sm font-medium">
-                Sort by
-              </label>
-
-              <USelect
-                v-model="sortBy"
-                :items="[
-                  { label: 'Default', value: 'default' },
-                  { label: 'Price: Low to High', value: 'price-low' },
-                  { label: 'Price: High to Low', value: 'price-high' }
-                ]"
-                class="w-full"
-              />
-            </div>
-
-          </div>
-        </div>
-
       </div>
     </template>
   </USlideover>
