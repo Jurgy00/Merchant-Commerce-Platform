@@ -86,14 +86,15 @@ const {
               :key="item.product.id"
               class="overflow-hidden"
             >
-              <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <!-- Book visual -->
+              <div class="flex items-center gap-4 sm:gap-5">
+                <!-- Book cover -->
                 <div
-                  class="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-primary/10"
+                  class="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-elevated sm:h-24 sm:w-16"
                 >
-                  <UIcon
-                    name="i-lucide-book-open"
-                    class="size-8 text-primary"
+                  <img
+                    :src="item.product.image"
+                    :alt="`${item.product.name} book cover`"
+                    class="size-full object-cover"
                   />
                 </div>
 
