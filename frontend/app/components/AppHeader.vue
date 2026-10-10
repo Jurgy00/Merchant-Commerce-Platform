@@ -1,9 +1,15 @@
 <script setup lang="ts">
 const { cartCount } = useCart()
+const colorMode = useColorMode()
 
 const mobileMenuOpen = ref(false)
-
 const searchQuery = useState('store-search', () => '')
+
+const isDark = computed(() => colorMode.value === 'dark')
+
+const toggleColorMode = () => {
+  colorMode.preference = isDark.value ? 'light' : 'dark'
+}
 
 const closeMobileMenu = () => {
   mobileMenuOpen.value = false
@@ -102,6 +108,14 @@ const closeMobileMenu = () => {
             {{ cartCount }}
           </UBadge>
         </UButton>
+
+        <UButton
+          color="neutral"
+          variant="ghost"
+          :icon="isDark ? 'i-lucide-sun' : 'i-lucide-moon'"
+          :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+          @click="toggleColorMode"
+        />
 
         <UButton
           color="neutral"

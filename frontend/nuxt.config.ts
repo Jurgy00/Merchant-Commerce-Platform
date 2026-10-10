@@ -4,7 +4,11 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/ui'
   ],
-
+colorMode: {
+    preference: 'dark',
+    fallback: 'dark',
+    classSuffix: ''
+  },
   devtools: {
     enabled: true
   },
@@ -41,6 +45,8 @@ export default defineNuxtConfig({
         'lucide:trash-2',
         'lucide:circle-alert',
         'lucide:check-circle',
+        'lucide:sun',
+        'lucide:moon',
         'lucide:chevron-down'
       ]
     }
