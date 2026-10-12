@@ -121,63 +121,12 @@ const handleBuyNow = () => {
              BOOK COVER
         ================================== -->
         <div>
-          <div
-            class="relative mx-auto flex aspect-[3/4] max-w-lg items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-primary/5 to-default p-8 sm:p-12"
-          >
-
-            <!-- Decorative background -->
-            <div
-              class="absolute -right-24 -top-24 size-64 rounded-full bg-primary/10 blur-3xl"
+          <div class="flex min-h-[360px] items-center justify-center py-4 sm:min-h-[520px]">
+            <img
+              :src="product.image"
+              :alt="`${product.name} book cover`"
+              class="block max-h-[520px] w-auto max-w-[90%] rounded-r-lg rounded-l-sm object-contain shadow-xl"
             />
-
-            <div
-              class="absolute -bottom-24 -left-24 size-72 rounded-full bg-primary/10 blur-3xl"
-            />
-
-            <!-- Book -->
-            <div
-              class="relative flex h-[82%] w-[70%] flex-col justify-between overflow-hidden rounded-r-2xl rounded-l-md border border-white/10 bg-default p-7 text-center shadow-2xl sm:p-10"
-            >
-
-              <!-- Top -->
-              <div>
-                <p
-                  class="text-[10px] font-bold uppercase tracking-[0.3em] text-primary"
-                >
-                  {{ product.category }}
-                </p>
-              </div>
-
-
-              <!-- Center -->
-              <div>
-                <UIcon
-                  name="i-lucide-book-open"
-                  class="mx-auto mb-6 size-12 text-primary/70"
-                />
-
-                <h2
-                  class="text-2xl font-bold leading-tight text-highlighted sm:text-3xl"
-                >
-                  {{ product.name }}
-                </h2>
-
-                <div
-                  class="mx-auto mt-6 h-px w-14 bg-primary/40"
-                />
-              </div>
-
-
-              <!-- Bottom -->
-              <div>
-                <p
-                  class="text-[9px] font-medium uppercase tracking-[0.3em] text-muted"
-                >
-                  BookStore
-                </p>
-              </div>
-
-            </div>
           </div>
 
 
