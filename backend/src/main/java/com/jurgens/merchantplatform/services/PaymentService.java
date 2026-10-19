@@ -1,5 +1,5 @@
 
-        package com.jurgens.merchantplatform.services;
+package com.jurgens.merchantplatform.services;
 
 import com.jurgens.merchantplatform.dto.PaymentRequest;
 import com.jurgens.merchantplatform.dto.PaymentResponse;
@@ -12,6 +12,7 @@ import com.jurgens.merchantplatform.repositories.OrderRepository;
 import com.jurgens.merchantplatform.repositories.PaymentRepository;
 import com.jurgens.merchantplatform.repositories.ProductRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -54,6 +55,8 @@ public class PaymentService {
 
         if (phoneNumber.startsWith("0")) {
             phoneNumber = "254" + phoneNumber.substring(1);
+        } else if (phoneNumber.startsWith("+254")) {
+            phoneNumber = phoneNumber.substring(1);
         }
 
         if (!phoneNumber.matches("254(7|1)[0-9]{8}")) {
@@ -107,9 +110,16 @@ public class PaymentService {
         return convertToResponse(savedPayment);
     }
 
+    @Transactional
     public void processMpesaCallback(
             Map<String, Object> callback
     ) {
+
+        if (callback == null || callback.get("Body") == null) {
+            throw new IllegalArgumentException(
+                    "Invalid M-Pesa callback"
+            );
+        }
 
         Map<String, Object> body =
                 (Map<String, Object>) callback.get("Body");
@@ -117,10 +127,18 @@ public class PaymentService {
         Map<String, Object> stkCallback =
                 (Map<String, Object>) body.get("stkCallback");
 
+        if (stkCallback == null
+                || stkCallback.get("CheckoutRequestID") == null
+                || !(stkCallback.get("ResultCode") instanceof Number)) {
+            throw new IllegalArgumentException(
+                    "Invalid M-Pesa STK callback data"
+            );
+        }
+
         String checkoutRequestId =
                 (String) stkCallback.get("CheckoutRequestID");
 
-        Integer resultCode =
+        int resultCode =
                 ((Number) stkCallback.get("ResultCode")).intValue();
 
         String resultDesc =
@@ -133,132 +151,123 @@ public class PaymentService {
                         new ResourceNotFoundException("Payment not found")
                 );
 
+        // Ignore duplicate callbacks for finalized payments.
         if (payment.getStatus() == PaymentStatus.SUCCESS
                 || payment.getStatus() == PaymentStatus.FAILED) {
-
             return;
         }
 
         payment.setResultCode(resultCode);
         payment.setResultDesc(resultDesc);
 
-        if (resultCode == 0) {
+        // Nonzero ResultCode means the STK transaction failed.
+        if (resultCode != 0) {
+            payment.setStatus(PaymentStatus.FAILED);
+            paymentRepository.save(payment);
+            return;
+        }
 
-            Map<String, Object> callbackMetadata =
-                    (Map<String, Object>)
-                            stkCallback.get("CallbackMetadata");
+        // Validate successful transaction metadata before updating stock.
+        Map<String, Object> callbackMetadata =
+                (Map<String, Object>) stkCallback.get("CallbackMetadata");
 
-            if (callbackMetadata != null) {
-
-                List<Map<String, Object>> items =
-                        (List<Map<String, Object>>)
-                                callbackMetadata.get("Item");
-
-                if (items != null) {
-
-                    for (Map<String, Object> item : items) {
-
-                        String name =
-                                (String) item.get("Name");
-
-                        Object value =
-                                item.get("Value");
-
-                        if ("Amount".equals(name)) {
-
-                            BigDecimal callbackAmount =
-                                    new BigDecimal(String.valueOf(value));
-
-                            if (callbackAmount.compareTo(
-                                    payment.getAmount()) != 0) {
-
-                                throw new RuntimeException(
-                                        "Payment amount does not match order amount"
-                                );
-                            }
-                        }
-
-                        if ("MpesaReceiptNumber".equals(name)) {
-
-                            String receiptNumber =
-                                    String.valueOf(value);
-
-                            Payment existingPayment =
-                                    paymentRepository
-                                            .findByMpesaReceiptNumber(
-                                                    receiptNumber
-                                            )
-                                            .orElse(null);
-
-                            if (existingPayment != null
-                                    && !existingPayment.getId()
-                                    .equals(payment.getId())) {
-
-                                return;
-                            }
-
-                            payment.setMpesaReceiptNumber(
-                                    receiptNumber
-                            );
-                        }
-
-                        if ("TransactionDate".equals(name)) {
-
-                            String transactionDate =
-                                    String.valueOf(value);
-
-                            DateTimeFormatter formatter =
-                                    DateTimeFormatter.ofPattern(
-                                            "yyyyMMddHHmmss"
-                                    );
-
-                            payment.setTransactionDate(
-                                    LocalDateTime.parse(
-                                            transactionDate,
-                                            formatter
-                                    )
-                            );
-                        }
-                    }
-                }
-            }
-
-            for (var item : payment.getOrder().getItems()) {
-
-                var product = item.getProduct();
-
-                int newStock =
-                        product.getStockQuantity() - item.getQuantity();
-
-                if (newStock < 0) {
-                    throw new RuntimeException(
-                            "Insufficient stock for product: "
-                                    + product.getName()
-                    );
-                }
-
-                product.setStockQuantity(newStock);
-
-                productRepository.save(product);
-            }
-
-            payment.setStatus(PaymentStatus.SUCCESS);
-
-            payment.getOrder().setStatus(
-                    OrderStatus.CONFIRMED
-            );
-
-            orderRepository.save(
-                    payment.getOrder()
-            );
-
-        } else {
-
-            payment.setStatus(
-                    PaymentStatus.FAILED
+        if (callbackMetadata == null
+                || !(callbackMetadata.get("Item") instanceof List<?>)) {
+            throw new IllegalArgumentException(
+                    "Successful callback is missing transaction metadata"
             );
         }
 
+        List<Map<String, Object>> items =
+                (List<Map<String, Object>>) callbackMetadata.get("Item");
+
+        BigDecimal callbackAmount = null;
+        String receiptNumber = null;
+        LocalDateTime transactionDate = null;
+
+        for (Map<String, Object> item : items) {
+            String name = (String) item.get("Name");
+            Object value = item.get("Value");
+
+            if ("Amount".equals(name) && value instanceof Number) {
+                callbackAmount = new BigDecimal(value.toString());
+
+            } else if ("MpesaReceiptNumber".equals(name)
+                    && value != null) {
+                receiptNumber = value.toString();
+
+            } else if ("TransactionDate".equals(name)
+                    && value != null) {
+                DateTimeFormatter formatter =
+                        DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
+                transactionDate = LocalDateTime.parse(
+                        value.toString(),
+                        formatter
+                );
+            }
+        }
+
+        if (callbackAmount == null) {
+            throw new IllegalArgumentException(
+                    "Successful callback is missing the transaction amount"
+            );
+        }
+
+        if (receiptNumber == null || receiptNumber.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Successful callback is missing the M-Pesa receipt number"
+            );
+        }
+
+        if (callbackAmount.compareTo(payment.getAmount()) != 0) {
+            throw new IllegalArgumentException(
+                    "Payment amount does not match the expected amount"
+            );
+        }
+
+        // Prevent a receipt from being linked to multiple payments.
+        Payment existingPayment =
+                paymentRepository.findByMpesaReceiptNumber(receiptNumber)
+                        .orElse(null);
+
+        if (existingPayment != null
+                && !existingPayment.getId().equals(payment.getId())) {
+            throw new IllegalStateException(
+                    "M-Pesa receipt is already linked to another payment"
+            );
+        }
+
+        // Validate all stock quantities before making any stock changes.
+        for (var item : payment.getOrder().getItems()) {
+            var product = item.getProduct();
+
+            if (product.getStockQuantity() < item.getQuantity()) {
+                throw new IllegalStateException(
+                        "Insufficient stock for product: "
+                                + product.getName()
+                );
+            }
+        }
+
+        // Deduct stock only after all validations pass.
+        for (var item : payment.getOrder().getItems()) {
+            var product = item.getProduct();
+
+            product.setStockQuantity(
+                    product.getStockQuantity() - item.getQuantity()
+            );
+
+            productRepository.save(product);
+        }
+
+        payment.setMpesaReceiptNumber(receiptNumber);
+        payment.setTransactionDate(transactionDate);
+        payment.setStatus(PaymentStatus.SUCCESS);
+
+        payment.getOrder().setStatus(OrderStatus.CONFIRMED);
+
+        orderRepository.save(payment.getOrder());
         paymentRepository.save(payment);
     }
 
@@ -291,13 +300,8 @@ public class PaymentService {
         response.setCheckoutRequestId(
                 payment.getCheckoutRequestId()
         );
-        response.setResultDesc(
-                payment.getResultDesc()
-        );
+        response.setResultDesc(payment.getResultDesc());
 
         return response;
     }
 }
-
-
-
