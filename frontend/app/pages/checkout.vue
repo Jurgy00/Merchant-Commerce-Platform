@@ -51,29 +51,149 @@ const handleCheckout = async () => {
     return
   }
 
+  if (cart.value.length === 0) {
+    return
+  }
+
   isSubmitting.value = true
 
   try {
+    const config = useRuntimeConfig()
+
     const orderData = {
-      customerName: customerName.value,
-      phoneNumber: phoneNumber.value,
-      deliveryAddress: deliveryAddress.value,
-      optionalNotes: optionalNotes.value,
+      customerName: customerName.value.trim(),
+      phoneNumber: phoneNumber.value.replace(/\s+/g, ''),
+      deliveryAddress: deliveryAddress.value.trim(),
+      optionalNotes: optionalNotes.value.trim(),
       items: cart.value.map(item => ({
         productId: item.product.id,
         quantity: item.quantity
       }))
     }
 
-    console.log(orderData)
+    const response = await $fetch<OrderResponse>(
+      '/api/storefront/orders',
+      {
+        baseURL: config.public.apiBase,
+        method: 'POST',
+        body: orderData
+      }
+    )
+
+    orderConfirmation.value = response
+    clearCart()
+  } catch (error: unknown) {
+    console.error('Order creation failed:', error)
+
+    const fetchError = error as {
+      data?: { message?: string; detail?: string; title?: string }
+      message?: string
+    }
+
+    orderError.value =
+      fetchError.data?.detail
+      || fetchError.data?.message
+      || fetchError.data?.title
+      || fetchError.message
+      || 'We could not create your order. Please try again.'
   } finally {
     isSubmitting.value = false
   }
 }
+
+interface OrderResponse {
+  id: number
+  orderReference: string
+  customerName: string
+  phoneNumber: string
+  deliveryAddress: string
+  optionalNotes: string | null
+  totalAmount: number
+  orderStatus: string
+  paymentStatus: string
+  createdAt: string
+  items: {
+    productId: number
+    productName: string
+    quantity: number
+    unitPrice: number
+    lineTotal: number
+  }[]
+}
+
+const { clearCart } = useCart()
+const orderConfirmation = ref<OrderResponse | null>(null)
+const orderError = ref('')
+
 </script>
 
 <template>
   <main>
+    <!-- Order confirmation -->
+    <section
+      v-if="orderConfirmation"
+      class="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8"
+    >
+      <UCard>
+        <div class="py-6 text-center">
+          <div class="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10">
+            <UIcon
+              name="i-lucide-check-circle"
+              class="size-8 text-primary"
+            />
+          </div>
+
+          <p class="mt-6 text-sm font-semibold uppercase tracking-widest text-primary">
+            Order Created
+          </p>
+
+          <h1 class="mt-2 text-3xl font-black tracking-tight text-highlighted sm:text-4xl">
+            Thank you for your order
+          </h1>
+
+          <p class="mt-4 text-muted">
+            Your order has been saved. Payment has not been completed yet.
+          </p>
+
+          <div class="mx-auto mt-8 max-w-md rounded-2xl border border-default bg-elevated/30 p-5 text-left">
+            <p class="text-sm text-muted">Order reference</p>
+            <p class="mt-1 break-all text-xl font-bold text-highlighted">
+              {{ orderConfirmation.orderReference }}
+            </p>
+
+            <div class="mt-5 flex items-center justify-between gap-4">
+              <span class="text-sm text-muted">Order total</span>
+              <span class="text-xl font-bold text-highlighted">
+                KES {{ Number(orderConfirmation.totalAmount).toLocaleString('en-KE') }}
+              </span>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between gap-4">
+              <span class="text-sm text-muted">Order status</span>
+              <UBadge color="warning">
+                {{ orderConfirmation.orderStatus }}
+              </UBadge>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between gap-4">
+              <span class="text-sm text-muted">Payment status</span>
+              <UBadge color="warning">
+                {{ orderConfirmation.paymentStatus }}
+              </UBadge>
+            </div>
+          </div>
+
+          <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <UButton to="/" size="lg" leading-icon="i-lucide-book-open">
+              Continue Browsing
+            </UButton>
+          </div>
+        </div>
+      </UCard>
+    </section>
+
+    <!-- Checkout -->
+    <template v-else>
     <!-- Page heading -->
     <section class="mx-auto max-w-7xl px-4 pb-8 pt-10 sm:px-6 sm:pt-14 lg:px-8">
       <div class="max-w-2xl">
@@ -244,10 +364,13 @@ const handleCheckout = async () => {
                 :key="item.product.id"
                 class="flex gap-4"
               >
-                <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                  <UIcon
-                    name="i-lucide-book-open"
-                    class="size-5 text-primary"
+                <div
+                  class="size-14 shrink-0 overflow-hidden rounded-lg bg-elevated"
+                >
+                  <img
+                    :src="item.product.image"
+                    :alt="`${item.product.name} book cover`"
+                    class="size-full object-cover"
                   />
                 </div>
 
@@ -291,15 +414,25 @@ const handleCheckout = async () => {
 
             <template #footer>
               <div class="space-y-3">
+                <UAlert
+                  v-if="orderError"
+                  color="error"
+                  variant="soft"
+                  title="Order could not be created"
+                  :description="orderError"
+                  icon="i-lucide-circle-alert"
+                  class="mb-3"
+                />
+
                 <UButton
                   block
                   size="lg"
-                  trailing-icon="i-lucide-smartphone"
+                  trailing-icon="i-lucide-arrow-right"
                   :loading="isSubmitting"
-                  :disabled="isSubmitting"
+                  :disabled="isSubmitting || cart.length === 0"
                   @click="handleCheckout"
                 >
-                  Pay with M-Pesa
+                  {{ isSubmitting ? 'Creating Order...' : 'Place Order' }}
                 </UButton>
 
                 <UButton
@@ -317,5 +450,6 @@ const handleCheckout = async () => {
         </aside>
       </div>
     </section>
+    </template>
   </main>
 </template>
