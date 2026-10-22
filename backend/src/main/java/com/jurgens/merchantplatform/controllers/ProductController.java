@@ -46,6 +46,7 @@ public class ProductController {
                 product.getPrice(),
                 product.getStockQuantity(),
                 product.getImageUrl(),
+		product.getAuthor(),
                 categorySummary
         );
     }

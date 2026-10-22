@@ -33,6 +33,8 @@ public class Product {
     private Integer stockQuantity;
 
     private String imageUrl;
+    
+    private String author;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
