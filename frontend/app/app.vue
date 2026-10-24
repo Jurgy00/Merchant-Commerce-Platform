@@ -7,121 +7,147 @@
     </main>
 
     <footer class="border-t border-default bg-elevated/20">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <!-- Main footer -->
-        <div class="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr]">
+      <div class="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8">
+        <div class="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr]">
           <!-- Brand -->
           <div>
             <NuxtLink
               to="/"
-              class="group inline-flex items-center gap-3"
+              class="inline-flex items-center gap-2.5"
             >
               <div
-                class="flex size-10 items-center justify-center rounded-xl bg-primary text-white transition-transform duration-200 group-hover:scale-105"
+                class="flex size-9 items-center justify-center rounded-full bg-primary text-white"
               >
                 <UIcon
                   name="i-lucide-book-open"
-                  class="size-5"
+                  class="size-4.5"
                 />
               </div>
 
               <div>
-                <p class="font-bold tracking-tight text-highlighted">
+                <p class="text-sm font-black text-highlighted">
                   BookStore
                 </p>
 
-                <p class="text-xs text-muted">
+                <p class="text-[9px] text-muted">
                   Read. Learn. Grow.
                 </p>
               </div>
             </NuxtLink>
 
-            <p class="mt-5 max-w-sm text-sm leading-6 text-muted">
-              A curated collection of books for curious minds, lifelong learners,
-              and anyone looking for their next great read.
+            <p class="mt-5 max-w-md text-sm leading-6 text-muted">
+              A thoughtfully curated collection of books for curious minds,
+              ambitious builders, lifelong learners, and readers who still
+              love getting lost in a good story.
             </p>
           </div>
 
-          <!-- Shop -->
+          <!-- Explore -->
           <div>
-            <p class="text-sm font-semibold text-highlighted">
-              Shop
+            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-highlighted">
+              Explore
             </p>
 
             <nav class="mt-4 flex flex-col items-start gap-3">
-              <UButton
+              <NuxtLink
                 to="/"
-                color="neutral"
-                variant="link"
-                class="p-0"
+                class="text-sm text-muted transition-colors hover:text-primary"
               >
-                Books
-              </UButton>
+                All books
+              </NuxtLink>
 
-              <UButton
+              <NuxtLink
+                to="/#featured"
+                class="text-sm text-muted transition-colors hover:text-primary"
+              >
+                Featured
+              </NuxtLink>
+
+              <NuxtLink
                 to="/#products"
-                color="neutral"
-                variant="link"
-                class="p-0"
+                class="text-sm text-muted transition-colors hover:text-primary"
               >
                 Collection
-              </UButton>
-
-              <UButton
-                to="/cart"
-                color="neutral"
-                variant="link"
-                class="p-0"
-              >
-                Cart
-              </UButton>
+              </NuxtLink>
             </nav>
           </div>
 
-          <!-- Help -->
+          <!-- Categories -->
           <div>
-            <p class="text-sm font-semibold text-highlighted">
-              Your Order
+            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-highlighted">
+              Categories
             </p>
 
             <nav class="mt-4 flex flex-col items-start gap-3">
-              <UButton
-                to="/cart"
-                color="neutral"
-                variant="link"
-                class="p-0"
+              <NuxtLink
+                to="/"
+                class="text-sm text-muted transition-colors hover:text-primary"
               >
-                Review Cart
-              </UButton>
+                Fiction
+              </NuxtLink>
 
-              <UButton
+              <NuxtLink
+                to="/"
+                class="text-sm text-muted transition-colors hover:text-primary"
+              >
+                Business
+              </NuxtLink>
+
+              <NuxtLink
+                to="/"
+                class="text-sm text-muted transition-colors hover:text-primary"
+              >
+                Technology
+              </NuxtLink>
+
+              <NuxtLink
+                to="/"
+                class="text-sm text-muted transition-colors hover:text-primary"
+              >
+                Self Development
+              </NuxtLink>
+            </nav>
+          </div>
+
+          <!-- Your order -->
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-highlighted">
+              Your order
+            </p>
+
+            <nav class="mt-4 flex flex-col items-start gap-3">
+              <NuxtLink
+                to="/cart"
+                class="text-sm text-muted transition-colors hover:text-primary"
+              >
+                Shopping bag
+              </NuxtLink>
+
+              <NuxtLink
                 to="/checkout"
-                color="neutral"
-                variant="link"
-                class="p-0"
+                class="text-sm text-muted transition-colors hover:text-primary"
               >
                 Checkout
-              </UButton>
+              </NuxtLink>
             </nav>
           </div>
         </div>
 
-        <!-- Bottom bar -->
         <div class="flex flex-col gap-3 border-t border-default py-6 sm:flex-row sm:items-center sm:justify-between">
-          <p class="text-sm text-muted">
+          <p class="text-xs text-muted">
             © 2026 BookStore. All rights reserved.
           </p>
 
-          <UButton
+          <NuxtLink
             to="/"
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            icon="i-lucide-arrow-up"
-            aria-label="Back to top"
+            class="inline-flex items-center gap-1 text-xs text-muted transition-colors hover:text-primary"
           >
             Back to top
-          </UButton>
+            <UIcon
+              name="i-lucide-arrow-up"
+              class="size-3"
+            />
+          </NuxtLink>
         </div>
       </div>
     </footer>

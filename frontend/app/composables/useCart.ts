@@ -1,5 +1,4 @@
-
-import type { Product } from '~/data/products'
+import type { Product } from '~/types/product'
 
 export interface CartItem {
   product: Product
@@ -10,42 +9,50 @@ const CART_STORAGE_KEY = 'merchant-commerce-cart'
 
 export const useCart = () => {
   const cart = useState<CartItem[]>('cart', () => [])
+  const cartReady = useState<boolean>('cart-ready', () => false)
 
-  // Restore the cart from localStorage when the app mounts in the browser.
+  // Restore saved cart data before enabling persistence.
   onMounted(() => {
-    const savedCart = localStorage.getItem(CART_STORAGE_KEY)
+    if (!cartReady.value) {
+      try {
+        const savedCart = localStorage.getItem(CART_STORAGE_KEY)
 
-    if (!savedCart) {
-      return
-    }
+        if (savedCart) {
+          const parsedCart = JSON.parse(savedCart) as unknown
 
-    try {
-      const parsedCart = JSON.parse(savedCart) as CartItem[]
-
-      if (Array.isArray(parsedCart)) {
-        cart.value = parsedCart
+          if (Array.isArray(parsedCart)) {
+            cart.value = parsedCart as CartItem[]
+          }
+        }
+      } catch {
+        // Ignore malformed or inaccessible saved data.
+      } finally {
+        cartReady.value = true
       }
-    } catch {
-      // Ignore invalid saved data and start with an empty cart.
-      localStorage.removeItem(CART_STORAGE_KEY)
     }
   })
 
-  // Save the cart whenever its contents or quantities change.
+  // Never overwrite saved data before restoration completes.
   watch(
     cart,
     (newCart) => {
-      if (import.meta.client) {
-        localStorage.setItem(
-          CART_STORAGE_KEY,
-          JSON.stringify(newCart)
-        )
+      if (import.meta.client && cartReady.value) {
+        try {
+          localStorage.setItem(
+            CART_STORAGE_KEY,
+            JSON.stringify(newCart)
+          )
+        } catch (error) {
+          console.error('Could not save cart:', error)
+        }
       }
     },
     { deep: true }
   )
 
   const addToCart = (product: Product) => {
+    if (!cartReady.value) return
+
     const existingItem = cart.value.find(
       item => item.product.id === product.id
     )
@@ -55,21 +62,18 @@ export const useCart = () => {
         existingItem.quantity++
       }
     } else if (product.stock > 0) {
-      cart.value.push({
-        product,
-        quantity: 1
-      })
+      cart.value.push({ product, quantity: 1 })
     }
   }
 
   const updateQuantity = (productId: number, change: number) => {
+    if (!cartReady.value) return
+
     const item = cart.value.find(
       item => item.product.id === productId
     )
 
-    if (!item) {
-      return
-    }
+    if (!item) return
 
     const newQuantity = item.quantity + change
 
@@ -77,35 +81,33 @@ export const useCart = () => {
       cart.value = cart.value.filter(
         item => item.product.id !== productId
       )
-
       return
     }
 
-    if (newQuantity > item.product.stock) {
-      return
-    }
+    if (newQuantity > item.product.stock) return
 
     item.quantity = newQuantity
   }
 
   const clearCart = () => {
+    if (!cartReady.value) return
     cart.value = []
   }
 
-  const cartCount = computed(() => {
-    return cart.value.reduce((total, item) => {
-      return total + item.quantity
-    }, 0)
-  })
+  const cartCount = computed(() =>
+    cart.value.reduce((total, item) => total + item.quantity, 0)
+  )
 
-  const totalPrice = computed(() => {
-    return cart.value.reduce((total, item) => {
-      return total + item.product.price * item.quantity
-    }, 0)
-  })
+  const totalPrice = computed(() =>
+    cart.value.reduce(
+      (total, item) => total + item.product.price * item.quantity,
+      0
+    )
+  )
 
   return {
     cart,
+    cartReady,
     addToCart,
     updateQuantity,
     clearCart,

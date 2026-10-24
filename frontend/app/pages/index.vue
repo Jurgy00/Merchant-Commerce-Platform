@@ -1,14 +1,20 @@
+
 <script setup lang="ts">
-import { computed } from 'vue'
-import { products } from '~/data/products'
+import { computed, onMounted, ref } from 'vue'
+import type { Product } from '~/types/product'
+
+const { getProducts } = useProductApi()
+
+const products = ref<Product[]>([])
+const isLoading = ref(true)
+const errorMessage = ref('')
 
 const categories = [
   'All',
   'Fiction',
   'Business',
   'Technology',
-  'Self Development',
-  'Children'
+  'Self Development'
 ]
 
 const searchQuery = useState('store-search', () => '')
@@ -16,10 +22,23 @@ const selectedCategory = useState('store-category', () => 'All')
 const maxPrice = useState('store-max-price', () => 4000)
 const sortBy = useState('store-sort', () => 'default')
 
+// Fetch from the backend after the page mounts.
+// This avoids requiring the backend during Nuxt's homepage prerender.
+onMounted(async () => {
+  try {
+    products.value = await getProducts()
+  } catch (error) {
+    console.error('Failed to load bookstore products:', error)
+    errorMessage.value = 'We could not load the books. Please try again.'
+  } finally {
+    isLoading.value = false
+  }
+})
+
 const filteredProducts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
 
-  const result = products.filter((product) => {
+  const result = products.value.filter((product) => {
     const matchesSearch =
       !query ||
       product.name.toLowerCase().includes(query) ||
@@ -83,7 +102,6 @@ const resetFilters = () => {
               <p class="text-2xl font-black text-highlighted">
                 {{ products.length }}
               </p>
-
               <p class="text-[9px] font-bold uppercase tracking-[0.14em] text-muted">
                 Titles
               </p>
@@ -93,7 +111,6 @@ const resetFilters = () => {
               <p class="text-2xl font-black text-highlighted">
                 {{ categories.length - 1 }}
               </p>
-
               <p class="text-[9px] font-bold uppercase tracking-[0.14em] text-muted">
                 Categories
               </p>
@@ -134,7 +151,6 @@ const resetFilters = () => {
       id="products"
       class="mx-auto max-w-[1800px] scroll-mt-32 px-4 pb-16 pt-9 sm:px-6 lg:px-8 lg:pt-11"
     >
-      <!-- Single toolbar -->
       <div class="flex flex-col gap-4 border-b border-default pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-[9px] font-black uppercase tracking-[0.2em] text-primary">
@@ -176,7 +192,7 @@ const resetFilters = () => {
           />
 
           <UButton
-            v-if="searchQuery || selectedCategory !== 'All' || maxPrice !== 4000 || sortBy !== 'default'"
+            v-if="searchQuery || selectedCategory !== 'All' || Number(maxPrice) !== 4000 || sortBy !== 'default'"
             color="neutral"
             variant="ghost"
             size="sm"
@@ -187,9 +203,40 @@ const resetFilters = () => {
         </div>
       </div>
 
-      <!-- ONE product grid -->
+      <!-- Loading state -->
       <div
-        v-if="filteredProducts.length"
+        v-if="isLoading"
+        class="flex min-h-[240px] items-center justify-center gap-3 text-sm text-muted"
+      >
+        <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin" />
+        Loading books...
+      </div>
+
+      <!-- API error state -->
+      <div
+        v-else-if="errorMessage"
+        class="flex min-h-[240px] flex-col items-center justify-center text-center"
+      >
+        <UIcon name="i-lucide-wifi-off" class="size-8 text-muted" />
+        <p class="mt-3 text-sm text-muted">{{ errorMessage }}</p>
+        <UButton
+          class="mt-4"
+          @click="() => {
+            isLoading = true
+            errorMessage = ''
+            getProducts()
+              .then((result) => products = result)
+              .catch(() => errorMessage = 'We could not load the books. Please try again.')
+              .finally(() => isLoading = false)
+          }"
+        >
+          Try again
+        </UButton>
+      </div>
+
+      <!-- Product grid -->
+      <div
+        v-else-if="filteredProducts.length"
         class="mt-7 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 md:gap-x-5 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
       >
         <ProductCard
@@ -199,16 +246,13 @@ const resetFilters = () => {
         />
       </div>
 
-      <!-- Empty -->
+      <!-- Empty state -->
       <div
         v-else
         class="flex min-h-[360px] flex-col items-center justify-center text-center"
       >
         <div class="flex size-14 items-center justify-center rounded-full bg-elevated">
-          <UIcon
-            name="i-lucide-search-x"
-            class="size-6 text-muted"
-          />
+          <UIcon name="i-lucide-search-x" class="size-6 text-muted" />
         </div>
 
         <h3 class="mt-4 text-lg font-bold text-highlighted">
@@ -219,10 +263,7 @@ const resetFilters = () => {
           Try another search, category or price range.
         </p>
 
-        <UButton
-          class="mt-5"
-          @click="resetFilters"
-        >
+        <UButton class="mt-5" @click="resetFilters">
           Reset filters
         </UButton>
       </div>

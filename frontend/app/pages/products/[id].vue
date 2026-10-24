@@ -1,53 +1,84 @@
 <script setup lang="ts">
-import { products } from '~/data/products'
+import { computed, onMounted, ref, watch } from 'vue'
+import type { Product } from '~/types/product'
 
 const route = useRoute()
-
-const {
-  addToCart,
-  cart
-} = useCart()
-
+const { getProduct } = useProductApi()
+const { addToCart, cart } = useCart()
 const toast = useToast()
 
-const productId = Number(route.params.id)
+const product = ref<Product | null>(null)
+const quantity = ref(1)
+const isLoading = ref(true)
+const errorMessage = ref('')
 
-const product = products.find(
-  product => product.id === productId
+const loadProduct = async () => {
+  const productId = Number(route.params.id)
+
+  product.value = null
+  quantity.value = 1
+  isLoading.value = true
+  errorMessage.value = ''
+
+  if (!Number.isInteger(productId) || productId <= 0) {
+    isLoading.value = false
+    return
+  }
+
+  try {
+    product.value = await getProduct(productId)
+  } catch (error) {
+    console.error('Failed to load product:', error)
+
+    const fetchError = error as {
+      status?: number
+      statusCode?: number
+    }
+
+    if ((fetchError.statusCode ?? fetchError.status) !== 404) {
+      errorMessage.value =
+        'We could not load this book. Check your connection and try again.'
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(loadProduct)
+
+watch(
+  () => route.params.id,
+  () => {
+    void loadProduct()
+  }
 )
 
-const quantity = ref(1)
-
 const cartQuantity = computed(() => {
-  if (!product) {
+  if (!product.value) {
     return 0
   }
 
   return cart.value.find(
-    item => item.product.id === product.id
+    item => item.product.id === product.value?.id
   )?.quantity ?? 0
 })
 
 const remainingStock = computed(() => {
-  if (!product) {
+  if (!product.value) {
     return 0
   }
 
-  return product.stock - cartQuantity.value
+  return Math.max(0, product.value.stock - cartQuantity.value)
 })
 
 const handleQuantityChange = (amount: number) => {
-  if (!product) {
+  if (!product.value) {
     return
   }
 
   const newQuantity = quantity.value + amount
 
-  if (newQuantity < 1) {
-    return
-  }
-
-  if (newQuantity > remainingStock.value) {
+  if (newQuantity < 1 || newQuantity > remainingStock.value) {
     return
   }
 
@@ -55,34 +86,33 @@ const handleQuantityChange = (amount: number) => {
 }
 
 const handleAddToCart = () => {
-  if (!product || remainingStock.value <= 0) {
+  if (!product.value || quantity.value > remainingStock.value) {
     return
   }
 
   for (let i = 0; i < quantity.value; i++) {
-    addToCart(product)
+    addToCart(product.value)
   }
 
   toast.add({
     title: 'Added to cart',
-    description:
-      `${quantity.value} × ${product.name} added to your cart.`,
+    description: `${quantity.value} × ${product.value.name} added to your cart.`,
     icon: 'i-lucide-check-circle'
   })
 
   quantity.value = 1
 }
 
-const handleBuyNow = () => {
-  if (!product || remainingStock.value <= 0) {
+const handleBuyNow = async () => {
+  if (!product.value || quantity.value > remainingStock.value) {
     return
   }
 
   for (let i = 0; i < quantity.value; i++) {
-    addToCart(product)
+    addToCart(product.value)
   }
 
-  navigateTo('/checkout')
+  await navigateTo('/checkout')
 }
 </script>
 
@@ -449,20 +479,38 @@ const handleBuyNow = () => {
     </section>
 
 
-    <!-- =================================
-         NOT FOUND
-    ================================== -->
+    <!-- Loading state -->
+    <section
+      v-else-if="isLoading"
+      class="mx-auto flex min-h-[360px] max-w-2xl items-center justify-center gap-3 px-4 py-20 text-sm text-muted sm:px-6 lg:px-8"
+    >
+      <UIcon
+        name="i-lucide-loader-circle"
+        class="size-5 animate-spin"
+      />
+      Loading book details...
+    </section>
+
+    <!-- Missing product or API error -->
     <section
       v-else
       class="mx-auto max-w-2xl px-4 py-20 sm:px-6 lg:px-8"
     >
       <UAlert
-        title="Product not found"
-        description="The product you're looking for does not exist."
-        icon="i-lucide-circle-alert"
+        :title="errorMessage ? 'Unable to load book' : 'Product not found'"
+        :description="errorMessage || 'The product you are looking for does not exist.'"
+        :icon="errorMessage ? 'i-lucide-wifi-off' : 'i-lucide-circle-alert'"
       />
 
-      <div class="mt-6 text-center">
+      <div class="mt-6 flex justify-center gap-3">
+        <UButton
+          v-if="errorMessage"
+          color="primary"
+          @click="loadProduct"
+        >
+          Try again
+        </UButton>
+
         <UButton
           to="/"
           color="neutral"

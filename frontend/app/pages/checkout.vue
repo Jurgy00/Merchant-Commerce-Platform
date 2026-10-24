@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const {
   cart,
+  cartReady,
   cartCount,
   totalPrice
 } = useCart()
@@ -93,7 +94,7 @@ const handleCheckout = async () => {
 
     <!-- Empty cart -->
     <section
-      v-if="cart.length === 0"
+      v-if="cartReady && cart.length === 0"
       class="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8"
     >
       <div class="rounded-3xl border border-default bg-elevated/30 px-6 py-16 text-center">
@@ -126,7 +127,7 @@ const handleCheckout = async () => {
 
     <!-- Checkout -->
     <section
-      v-else
+      v-else-if="cartReady"
       class="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8"
     >
       <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
@@ -316,6 +317,17 @@ const handleCheckout = async () => {
           </UCard>
         </aside>
       </div>
+    </section>
+        <!-- Cart initialization -->
+    <section
+      v-if="!cartReady"
+      class="mx-auto flex min-h-[300px] max-w-7xl items-center justify-center gap-3 px-4 py-16 text-sm text-muted sm:px-6 lg:px-8"
+    >
+      <UIcon
+        name="i-lucide-loader-circle"
+        class="size-5 animate-spin"
+      />
+      Restoring your cart...
     </section>
   </main>
 </template>

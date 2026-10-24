@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { products } from '~/data/products'
-
-type Product = (typeof products)[number]
+import type { Product } from '~/types/product'
 
 defineProps<{
   product: Product
