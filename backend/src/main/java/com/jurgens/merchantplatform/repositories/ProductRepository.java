@@ -1,3 +1,4 @@
+
 package com.jurgens.merchantplatform.repositories;
 
 import com.jurgens.merchantplatform.entities.Product;
@@ -8,4 +9,6 @@ import java.util.List;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByCategoryId(Long categoryId);
+
+    List<Product> findByCategory_NameIn(List<String> categoryNames);
 }

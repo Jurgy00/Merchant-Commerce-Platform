@@ -1,3 +1,4 @@
+
 package com.jurgens.merchantplatform.dto;
 
 import java.math.BigDecimal;
@@ -11,6 +12,8 @@ public class ProductResponse {
     private Integer stockQuantity;
     private String imageUrl;
     private Long categoryId;
+    private String categoryName;
+    private String categoryDescription;
 
     public Long getId() {
         return id;
@@ -66,5 +69,21 @@ public class ProductResponse {
 
     public void setCategoryId(Long categoryId) {
         this.categoryId = categoryId;
+    }
+
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
+    }
+
+    public String getCategoryDescription() {
+        return categoryDescription;
+    }
+
+    public void setCategoryDescription(String categoryDescription) {
+        this.categoryDescription = categoryDescription;
     }
 }

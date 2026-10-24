@@ -1,3 +1,4 @@
+
 package com.jurgens.merchantplatform.services;
 
 import com.jurgens.merchantplatform.dto.CreateProductRequest;
@@ -48,7 +49,15 @@ public class ProductService {
 
     public List<ProductResponse> getAllProducts() {
 
-        return productRepository.findAll()
+        List<String> bookstoreCategories = List.of(
+                "Fiction",
+                "Technology",
+                "Business",
+                "Self Development",
+                "Children"
+        );
+
+        return productRepository.findByCategory_NameIn(bookstoreCategories)
                 .stream()
                 .map(this::convertToResponse)
                 .toList();
@@ -112,7 +121,12 @@ public class ProductService {
         response.setPrice(product.getPrice());
         response.setStockQuantity(product.getStockQuantity());
         response.setImageUrl(product.getImageUrl());
-        response.setCategoryId(product.getCategory().getId());
+
+        Category category = product.getCategory();
+
+        response.setCategoryId(category.getId());
+        response.setCategoryName(category.getName());
+        response.setCategoryDescription(category.getDescription());
 
         return response;
     }
