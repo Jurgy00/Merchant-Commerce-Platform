@@ -14,7 +14,9 @@ const categories = [
   'Fiction',
   'Business',
   'Technology',
-  'Self Development'
+  'Self Development',
+  'Children'
+
 ]
 
 const searchQuery = useState('store-search', () => '')

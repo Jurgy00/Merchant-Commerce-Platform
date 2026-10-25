@@ -1,4 +1,23 @@
+<script setup lang="ts">
+const selectedCategory = useState<string>(
+  'store-category',
+  () => 'All'
+)
+
+const footerCategories = [
+  'Fiction',
+  'Business',
+  'Technology',
+  'Self Development',
+  'Children'
+]
+
+const selectFooterCategory = (category: string) => {
+  selectedCategory.value = category
+}
+</script>
 <template>
+
   <div class="min-h-screen bg-default">
     <AppHeader />
 
@@ -78,35 +97,17 @@
               Categories
             </p>
 
-            <nav class="mt-4 flex flex-col items-start gap-3">
-              <NuxtLink
-                to="/"
-                class="text-sm text-muted transition-colors hover:text-primary"
-              >
-                Fiction
-              </NuxtLink>
-
-              <NuxtLink
-                to="/"
-                class="text-sm text-muted transition-colors hover:text-primary"
-              >
-                Business
-              </NuxtLink>
-
-              <NuxtLink
-                to="/"
-                class="text-sm text-muted transition-colors hover:text-primary"
-              >
-                Technology
-              </NuxtLink>
-
-              <NuxtLink
-                to="/"
-                class="text-sm text-muted transition-colors hover:text-primary"
-              >
-                Self Development
-              </NuxtLink>
-            </nav>
+                      <nav class="mt-4 flex flex-col items-start gap-3">
+            <NuxtLink
+              v-for="category in footerCategories"
+              :key="category"
+              to="/#products"
+              class="text-sm text-muted transition-colors hover:text-primary"
+              @click="selectFooterCategory(category)"
+            >
+              {{ category }}
+            </NuxtLink>
+                      </nav>
           </div>
 
           <!-- Your order -->
