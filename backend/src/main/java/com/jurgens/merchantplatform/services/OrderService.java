@@ -56,12 +56,24 @@ public class OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (OrderItemRequest itemRequest : request.getItems()) {
+if (itemRequest.getQuantity() == null || itemRequest.getQuantity() <= 0) {
+    throw new IllegalArgumentException(
+            "Product quantity must be greater than zero"
+    );
+}
 
-            Product product = productRepository.findById(itemRequest.getProductId())
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException(
-                                    "Product not found with id: " + itemRequest.getProductId()
-                            ));
+Product product = productRepository.findByIdForUpdate(itemRequest.getProductId())
+        .orElseThrow(() ->
+                new ResourceNotFoundException(
+                        "Product not found with id: " + itemRequest.getProductId()
+                ));
+
+if (product.getStockQuantity() < itemRequest.getQuantity()) {
+    throw new IllegalArgumentException(
+            "Insufficient stock for product: " + product.getName()
+    );
+}
+
 
             OrderItem item = new OrderItem();
 

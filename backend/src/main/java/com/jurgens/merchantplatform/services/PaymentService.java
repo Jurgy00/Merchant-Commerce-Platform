@@ -158,7 +158,7 @@ public class PaymentService {
         String resultDesc = (String) stkCallback.get("ResultDesc");
 
         Payment payment = paymentRepository
-                .findByCheckoutRequestId(checkoutRequestId)
+                .findByCheckoutRequestIdForUpdate(checkoutRequestId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Payment not found")
                 );
