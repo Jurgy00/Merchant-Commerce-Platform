@@ -1,6 +1,6 @@
 
 package com.jurgens.merchantplatform.repositories;
-
+import java.util.List;
 import com.jurgens.merchantplatform.entities.Order;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,4 +15,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT o FROM Order o WHERE o.id = :orderId")
     Optional<Order> findByIdForUpdate(@Param("orderId") Long orderId);
+List<Order> findAllByOrderByIdDesc();
 }

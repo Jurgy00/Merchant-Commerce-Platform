@@ -92,7 +92,7 @@ public class OrderService {
 
     public List<OrderResponse> getAllOrders() {
 
-        return orderRepository.findAll()
+        return orderRepository.findAllByOrderByIdDesc()
                 .stream()
                 .map(this::convertToResponse)
                 .toList();
