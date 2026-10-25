@@ -3,8 +3,15 @@ const {
   cart,
   cartReady,
   cartCount,
-  totalPrice
+  totalPrice,
+  clearCart
 } = useCart()
+
+const {
+  createOrder,
+  initiatePayment,
+  getPaymentsForOrder
+} = useOrderApi()
 
 const customerName = ref('')
 const phoneNumber = ref('')
@@ -12,6 +19,13 @@ const deliveryAddress = ref('')
 const optionalNotes = ref('')
 
 const isSubmitting = ref(false)
+const isCheckingPayment = ref(false)
+
+const orderId = ref<number | null>(null)
+const orderNumber = ref('')
+const paymentStatus = ref<'PENDING' | 'SUCCESS' | 'FAILED' | null>(null)
+const statusMessage = ref('')
+const statusIsError = ref(false)
 
 const errors = ref({
   customerName: '',
@@ -42,33 +56,120 @@ const validateCheckout = () => {
       'Please enter your delivery address.'
   }
 
+  if (cart.value.length === 0) {
+    statusMessage.value = 'Your cart is empty. Add a book before checking out.'
+    statusIsError.value = true
+    return false
+  }
+
   return !Object.values(errors.value).some(error => error)
 }
 
 const handleCheckout = async () => {
-  const isValid = validateCheckout()
+  if (isSubmitting.value || paymentStatus.value === 'SUCCESS') {
+    return
+  }
 
-  if (!isValid) {
+  if (!validateCheckout()) {
     return
   }
 
   isSubmitting.value = true
+  statusMessage.value = ''
+  statusIsError.value = false
+
+  const phone = phoneNumber.value.replace(/\s+/g, '')
 
   try {
-    const orderData = {
-      customerName: customerName.value,
-      phoneNumber: phoneNumber.value,
-      deliveryAddress: deliveryAddress.value,
-      optionalNotes: optionalNotes.value,
-      items: cart.value.map(item => ({
-        productId: item.product.id,
-        quantity: item.quantity
-      }))
+    // Create the order only if we do not already have its ID.
+    if (orderId.value === null) {
+      const order = await createOrder({
+        customerName: customerName.value.trim(),
+        phoneNumber: phone,
+        deliveryLocation: deliveryAddress.value.trim(),
+        notes: optionalNotes.value.trim(),
+        merchantId: 1,
+        items: cart.value.map(item => ({
+          productId: item.product.id,
+          quantity: item.quantity
+        }))
+      })
+
+      orderId.value = order.id
+      orderNumber.value = order.orderNumber
     }
 
-    console.log(orderData)
+    // A retry uses the existing order rather than creating another one.
+    const payment = await initiatePayment({
+      orderId: orderId.value,
+      phoneNumber: phone
+    })
+
+    paymentStatus.value = payment.status
+
+    if (payment.status === 'SUCCESS') {
+      clearCart()
+      statusMessage.value =
+        `Payment confirmed for order ${orderNumber.value}. Thank you for your purchase!`
+    } else if (payment.status === 'FAILED') {
+      statusMessage.value =
+        payment.resultDesc || 'The payment failed. Please check the details and try again.'
+      statusIsError.value = true
+    } else {
+      statusMessage.value =
+        `Order ${orderNumber.value} has been created. Check your phone for the M-Pesa prompt, then enter your PIN if you initiated this payment. Use "Check payment status" before retrying.`
+    }
+  } catch (error: unknown) {
+    statusIsError.value = true
+
+    const detail = error instanceof Error ? error.message : ''
+    statusMessage.value = orderId.value === null
+      ? `We couldn't confirm that your order was created. ${detail} Check your orders before trying again if the request may have reached the server.`
+      : `Your order ${orderNumber.value} exists, but the payment request could not be confirmed. Check payment status before retrying. ${detail}`
   } finally {
     isSubmitting.value = false
+  }
+}
+
+const checkPaymentStatus = async () => {
+  if (orderId.value === null || isCheckingPayment.value) {
+    return
+  }
+
+  isCheckingPayment.value = true
+  statusIsError.value = false
+
+  try {
+    const payments = await getPaymentsForOrder(orderId.value)
+    const latestPayment = payments[0]
+
+    if (!latestPayment) {
+      statusMessage.value =
+        'No payment record was found yet. If you just requested payment, wait a moment and check again.'
+      return
+    }
+
+    paymentStatus.value = latestPayment.status
+
+    if (latestPayment.status === 'SUCCESS') {
+      clearCart()
+      statusMessage.value =
+        `Payment confirmed for order ${orderNumber.value}. Thank you for your purchase!`
+    } else if (latestPayment.status === 'FAILED') {
+      statusMessage.value =
+        latestPayment.resultDesc || 'The payment failed. You can retry payment for this order.'
+      statusIsError.value = true
+    } else {
+      statusMessage.value =
+        'Your payment is still pending. Complete the M-Pesa prompt on your phone, then check again.'
+    }
+  } catch (error: unknown) {
+    const detail = error instanceof Error ? error.message : ''
+    statusMessage.value =
+      `We couldn't retrieve the payment status. Please try again. ${detail}`
+    statusIsError.value = true
+  } finally {
+    isCheckingPayment.value = false
   }
 }
 </script>
@@ -89,6 +190,36 @@ const handleCheckout = async () => {
         <p class="mt-4 text-base leading-7 text-muted">
           Enter your delivery details and review your order before payment.
         </p>
+      </div>
+    </section>
+
+    <!-- Order and payment feedback -->
+    <section
+      v-if="statusMessage"
+      class="mx-auto max-w-7xl px-4 pb-6 sm:px-6 lg:px-8"
+      aria-live="polite"
+    >
+      <div
+        class="rounded-2xl border px-5 py-4"
+        :class="statusIsError
+          ? 'border-error/30 bg-error/5 text-error'
+          : 'border-primary/30 bg-primary/5 text-highlighted'"
+      >
+        <p class="font-medium">
+          {{ statusMessage }}
+        </p>
+
+        <UButton
+          v-if="orderId !== null && paymentStatus !== 'SUCCESS'"
+          class="mt-3"
+          color="neutral"
+          variant="outline"
+          :loading="isCheckingPayment"
+          :disabled="isSubmitting || isCheckingPayment"
+          @click="checkPaymentStatus"
+        >
+          Check payment status
+        </UButton>
       </div>
     </section>
 
@@ -245,11 +376,23 @@ const handleCheckout = async () => {
                 :key="item.product.id"
                 class="flex gap-4"
               >
-                <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                  <UIcon
-                    name="i-lucide-book-open"
-                    class="size-5 text-primary"
+              <div class="size-16 shrink-0 overflow-hidden rounded-xl bg-elevated/40">
+                  <img
+                    v-if="item.product.image"
+                    :src="item.product.image"
+                    :alt="`${item.product.name} book cover`"
+                    loading="lazy"
+                    class="size-full object-cover"
                   />
+                  <div
+                    v-else
+                    class="flex size-full items-center justify-center"
+                  >
+                    <UIcon
+                      name="i-lucide-book-open"
+                      class="size-6 text-primary"
+                    />
+                  </div>
                 </div>
 
                 <div class="min-w-0 flex-1">
