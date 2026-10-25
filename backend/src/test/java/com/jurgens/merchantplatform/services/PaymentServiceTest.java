@@ -1,6 +1,7 @@
 
 package com.jurgens.merchantplatform.services;
-
+import com.jurgens.merchantplatform.dto.PaymentRequest;
+import org.junit.jupiter.api.Assertions;
 import com.jurgens.merchantplatform.entities.Order;
 import com.jurgens.merchantplatform.entities.OrderItem;
 import com.jurgens.merchantplatform.entities.OrderStatus;
@@ -163,4 +164,34 @@ class PaymentServiceTest {
         verify(orderRepository).save(order);
         verify(paymentRepository).save(payment);
     }
+@Test
+void pendingPaymentPreventsDuplicateStkPush() {
+    Order order = new Order();
+    order.setStatus(OrderStatus.PENDING);
+    order.setTotalAmount(new BigDecimal("2000.00"));
+
+    Payment existingPayment = new Payment();
+    existingPayment.setStatus(PaymentStatus.PENDING);
+
+    when(orderRepository.findByIdForUpdate(1L))
+            .thenReturn(Optional.of(order));
+
+    when(paymentRepository.findByOrderIdAndStatus(
+            1L, PaymentStatus.PENDING))
+            .thenReturn(Optional.of(existingPayment));
+
+    PaymentRequest request = new PaymentRequest();
+    request.setOrderId(1L);
+    request.setPhoneNumber("0712345678");
+
+    Assertions.assertThrows(
+            IllegalStateException.class,
+            () -> paymentService.initiatePayment(request)
+    );
+
+    verify(mpesaService, never())
+            .initiateStkPush(anyInt(), anyString(), anyString());
+
+    verify(paymentRepository, never()).saveAndFlush(any(Payment.class));
+}
 }

@@ -2,8 +2,10 @@ package com.jurgens.merchantplatform.services;
 
 import com.jurgens.merchantplatform.config.MpesaConfig;
 import org.springframework.stereotype.Service;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -24,8 +26,15 @@ public class MpesaService {
     ) {
         this.mpesaConfig = mpesaConfig;
         this.darajaAuthService = darajaAuthService;
-        this.restClient = RestClient.create();
-    }
+SimpleClientHttpRequestFactory requestFactory =
+        new SimpleClientHttpRequestFactory();
+
+requestFactory.setConnectTimeout(Duration.ofSeconds(5));
+requestFactory.setReadTimeout(Duration.ofSeconds(15));
+
+this.restClient = RestClient.builder()
+        .requestFactory(requestFactory)
+        .build();    }
 
     public StkPushResponse initiateStkPush(
             int amount,
