@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 @Service
 public class PaymentService {
@@ -40,15 +41,18 @@ public class PaymentService {
         this.productRepository = productRepository;
     }
 
+    @Transactional
     public PaymentResponse initiatePayment(PaymentRequest request) {
+
+        if (request == null || request.getOrderId() == null) {
+            throw new IllegalArgumentException("Order ID is required");
+        }
 
         Long orderId = request.getOrderId();
         String phoneNumber = request.getPhoneNumber();
 
         if (phoneNumber == null || phoneNumber.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Phone number is required"
-            );
+            throw new IllegalArgumentException("Phone number is required");
         }
 
         phoneNumber = phoneNumber.trim();
@@ -60,27 +64,52 @@ public class PaymentService {
         }
 
         if (!phoneNumber.matches("254(7|1)[0-9]{8}")) {
-            throw new IllegalArgumentException(
-                    "Invalid Kenyan phone number"
-            );
+            throw new IllegalArgumentException("Invalid Kenyan phone number");
         }
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Order not found")
                 );
 
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalStateException(
+                    "Cannot initiate payment for a cancelled order"
+            );
+        }
+
+        if (order.getStatus() == OrderStatus.CONFIRMED) {
+            throw new IllegalStateException(
+                    "Order has already been confirmed"
+            );
+        }
+
+        Payment existingPayment = paymentRepository
+                .findByOrderIdAndStatus(orderId, PaymentStatus.PENDING)
+                .orElse(null);
+
+        if (existingPayment != null) {
+            throw new IllegalStateException(
+                    "A payment is already pending for this order"
+            );
+        }
+
         BigDecimal amount = order.getTotalAmount();
 
-        Payment payment = new Payment();
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalStateException(
+                    "Order total must be greater than zero"
+            );
+        }
 
+        Payment payment = new Payment();
         payment.setOrder(order);
         payment.setAmount(amount);
         payment.setPhoneNumber(phoneNumber);
         payment.setStatus(PaymentStatus.PENDING);
         payment.setCreatedAt(LocalDateTime.now());
 
-        payment = paymentRepository.save(payment);
+        payment = paymentRepository.saveAndFlush(payment);
 
         MpesaService.StkPushResponse response =
                 mpesaService.initiateStkPush(
@@ -89,21 +118,10 @@ public class PaymentService {
                         order.getOrderNumber()
                 );
 
-        payment.setMerchantRequestId(
-                response.MerchantRequestID()
-        );
-
-        payment.setCheckoutRequestId(
-                response.CheckoutRequestID()
-        );
-
-        payment.setResultCode(
-                Integer.valueOf(response.ResponseCode())
-        );
-
-        payment.setResultDesc(
-                response.ResponseDescription()
-        );
+        payment.setMerchantRequestId(response.MerchantRequestID());
+        payment.setCheckoutRequestId(response.CheckoutRequestID());
+        payment.setResultCode(Integer.valueOf(response.ResponseCode()));
+        payment.setResultDesc(response.ResponseDescription());
 
         Payment savedPayment = paymentRepository.save(payment);
 
@@ -111,14 +129,10 @@ public class PaymentService {
     }
 
     @Transactional
-    public void processMpesaCallback(
-            Map<String, Object> callback
-    ) {
+    public void processMpesaCallback(Map<String, Object> callback) {
 
         if (callback == null || callback.get("Body") == null) {
-            throw new IllegalArgumentException(
-                    "Invalid M-Pesa callback"
-            );
+            throw new IllegalArgumentException("Invalid M-Pesa callback");
         }
 
         Map<String, Object> body =
@@ -141,17 +155,14 @@ public class PaymentService {
         int resultCode =
                 ((Number) stkCallback.get("ResultCode")).intValue();
 
-        String resultDesc =
-                (String) stkCallback.get("ResultDesc");
+        String resultDesc = (String) stkCallback.get("ResultDesc");
 
-        Payment payment =
-                paymentRepository.findByCheckoutRequestId(
-                        checkoutRequestId
-                ).orElseThrow(() ->
+        Payment payment = paymentRepository
+                .findByCheckoutRequestId(checkoutRequestId)
+                .orElseThrow(() ->
                         new ResourceNotFoundException("Payment not found")
                 );
 
-        // Ignore duplicate callbacks for finalized payments.
         if (payment.getStatus() == PaymentStatus.SUCCESS
                 || payment.getStatus() == PaymentStatus.FAILED) {
             return;
@@ -160,14 +171,12 @@ public class PaymentService {
         payment.setResultCode(resultCode);
         payment.setResultDesc(resultDesc);
 
-        // Nonzero ResultCode means the STK transaction failed.
         if (resultCode != 0) {
             payment.setStatus(PaymentStatus.FAILED);
             paymentRepository.save(payment);
             return;
         }
 
-        // Validate successful transaction metadata before updating stock.
         Map<String, Object> callbackMetadata =
                 (Map<String, Object>) stkCallback.get("CallbackMetadata");
 
@@ -190,20 +199,16 @@ public class PaymentService {
             Object value = item.get("Value");
 
             if ("Amount".equals(name) && value instanceof Number) {
-                callbackAmount = new BigDecimal(value.toString());
-
+                callbackAmount = BigDecimal.valueOf(
+                        ((Number) value).doubleValue()
+                );
             } else if ("MpesaReceiptNumber".equals(name)
-                    && value != null) {
-                receiptNumber = value.toString();
-
-            } else if ("TransactionDate".equals(name)
-                    && value != null) {
-                DateTimeFormatter formatter =
-                        DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-
+                    && value instanceof String) {
+                receiptNumber = (String) value;
+            } else if ("TransactionDate".equals(name) && value != null) {
                 transactionDate = LocalDateTime.parse(
                         value.toString(),
-                        formatter
+                        DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
                 );
             }
         }
@@ -222,40 +227,50 @@ public class PaymentService {
 
         if (callbackAmount.compareTo(payment.getAmount()) != 0) {
             throw new IllegalArgumentException(
-                    "Payment amount does not match the expected amount"
+                    "M-Pesa callback amount does not match payment amount"
             );
         }
 
-        // Prevent a receipt from being linked to multiple payments.
-        Payment existingPayment =
-                paymentRepository.findByMpesaReceiptNumber(receiptNumber)
-                        .orElse(null);
+        // Combine quantities for duplicate products and sort by product ID.
+        Map<Long, Integer> requiredQuantities = new TreeMap<>();
 
-        if (existingPayment != null
-                && !existingPayment.getId().equals(payment.getId())) {
-            throw new IllegalStateException(
-                    "M-Pesa receipt is already linked to another payment"
-            );
-        }
-
-        // Validate all stock quantities before making any stock changes.
         for (var item : payment.getOrder().getItems()) {
-            var product = item.getProduct();
+            Long productId = item.getProduct().getId();
 
-            if (product.getStockQuantity() < item.getQuantity()) {
+            requiredQuantities.merge(
+                    productId,
+                    item.getQuantity(),
+                    Integer::sum
+            );
+        }
+
+        // Lock products in ID order and verify all stock before deducting.
+        Map<Long, com.jurgens.merchantplatform.entities.Product>
+                lockedProducts = new TreeMap<>();
+
+        for (var entry : requiredQuantities.entrySet()) {
+            var product = productRepository.findByIdForUpdate(entry.getKey())
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException(
+                                    "Product not found with id: " + entry.getKey()
+                            )
+                    );
+
+            if (product.getStockQuantity() < entry.getValue()) {
                 throw new IllegalStateException(
-                        "Insufficient stock for product: "
-                                + product.getName()
+                        "Insufficient stock for product: " + product.getName()
                 );
             }
+
+            lockedProducts.put(entry.getKey(), product);
         }
 
-        // Deduct stock only after all validations pass.
-        for (var item : payment.getOrder().getItems()) {
-            var product = item.getProduct();
+        // Deduct stock only after every product passes validation.
+        for (var entry : requiredQuantities.entrySet()) {
+            var product = lockedProducts.get(entry.getKey());
 
             product.setStockQuantity(
-                    product.getStockQuantity() - item.getQuantity()
+                    product.getStockQuantity() - entry.getValue()
             );
 
             productRepository.save(product);
@@ -264,7 +279,6 @@ public class PaymentService {
         payment.setMpesaReceiptNumber(receiptNumber);
         payment.setTransactionDate(transactionDate);
         payment.setStatus(PaymentStatus.SUCCESS);
-
         payment.getOrder().setStatus(OrderStatus.CONFIRMED);
 
         orderRepository.save(payment.getOrder());
@@ -286,7 +300,6 @@ public class PaymentService {
     }
 
     private PaymentResponse convertToResponse(Payment payment) {
-
         PaymentResponse response = new PaymentResponse();
 
         response.setId(payment.getId());
@@ -294,12 +307,8 @@ public class PaymentService {
         response.setAmount(payment.getAmount());
         response.setPhoneNumber(payment.getPhoneNumber());
         response.setStatus(payment.getStatus());
-        response.setMpesaReceiptNumber(
-                payment.getMpesaReceiptNumber()
-        );
-        response.setCheckoutRequestId(
-                payment.getCheckoutRequestId()
-        );
+        response.setMpesaReceiptNumber(payment.getMpesaReceiptNumber());
+        response.setCheckoutRequestId(payment.getCheckoutRequestId());
         response.setResultDesc(payment.getResultDesc());
 
         return response;
