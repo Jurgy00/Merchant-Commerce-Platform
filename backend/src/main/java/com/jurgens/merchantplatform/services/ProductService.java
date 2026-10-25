@@ -19,8 +19,9 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
 
-    public ProductService(ProductRepository productRepository,
-                          CategoryRepository categoryRepository) {
+    public ProductService(
+            ProductRepository productRepository,
+            CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
     }
@@ -30,7 +31,8 @@ public class ProductService {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Category not found with id: " + request.getCategoryId()
+                                "Category not found with id: "
+                                        + request.getCategoryId()
                         ));
 
         Product product = new Product();
@@ -84,11 +86,25 @@ public class ProductService {
 
         Product existingProduct = getProductEntityById(id);
 
-        existingProduct.setName(request.getName());
-        existingProduct.setDescription(request.getDescription());
-        existingProduct.setPrice(request.getPrice());
-        existingProduct.setStockQuantity(request.getStockQuantity());
-        existingProduct.setImageUrl(request.getImageUrl());
+        if (request.getName() != null) {
+            existingProduct.setName(request.getName());
+        }
+
+        if (request.getDescription() != null) {
+            existingProduct.setDescription(request.getDescription());
+        }
+
+        if (request.getPrice() != null) {
+            existingProduct.setPrice(request.getPrice());
+        }
+
+        if (request.getStockQuantity() != null) {
+            existingProduct.setStockQuantity(request.getStockQuantity());
+        }
+
+        if (request.getImageUrl() != null) {
+            existingProduct.setImageUrl(request.getImageUrl());
+        }
 
         Product updatedProduct = productRepository.save(existingProduct);
 
