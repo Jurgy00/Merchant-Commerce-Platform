@@ -3,21 +3,14 @@
 import { computed, onMounted, ref } from 'vue'
 import type { Product } from '~/types/product'
 
-const { getProducts } = useProductApi()
+const { getProducts, getCategories } = useProductApi()
 
 const products = ref<Product[]>([])
+const categories = ref<string[]>([])
 const isLoading = ref(true)
 const errorMessage = ref('')
 
-const categories = [
-  'All',
-  'Fiction',
-  'Business',
-  'Technology',
-  'Self Development',
-  'Children'
-
-]
+const categoryOptions = computed(() => ['All', ...categories.value])
 
 const searchQuery = useState('store-search', () => '')
 const selectedCategory = useState('store-category', () => 'All')
@@ -27,6 +20,14 @@ const sortBy = useState('store-sort', () => 'default')
 // Fetch from the backend after the page mounts.
 // This avoids requiring the backend during Nuxt's homepage prerender.
 onMounted(async () => {
+  const categoryRequest = getCategories(1)
+    .then((result) => {
+      categories.value = result.map((category) => category.name)
+    })
+    .catch((error) => {
+      console.error('Failed to load bookstore categories:', error)
+    })
+
   try {
     products.value = await getProducts()
   } catch (error) {
@@ -35,6 +36,8 @@ onMounted(async () => {
   } finally {
     isLoading.value = false
   }
+
+  await categoryRequest
 })
 
 const filteredProducts = computed(() => {
@@ -111,7 +114,7 @@ const resetFilters = () => {
 
             <div>
               <p class="text-2xl font-black text-highlighted">
-                {{ categories.length - 1 }}
+                {{ categories.length }}
               </p>
               <p class="text-[9px] font-bold uppercase tracking-[0.14em] text-muted">
                 Categories
@@ -131,7 +134,7 @@ const resetFilters = () => {
           </span>
 
           <button
-            v-for="category in categories"
+            v-for="category in categoryOptions"
             :key="category"
             type="button"
             class="shrink-0 border-b-2 py-4 text-[10px] font-bold uppercase tracking-[0.1em] transition-colors"

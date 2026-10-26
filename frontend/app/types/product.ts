@@ -27,3 +27,23 @@ export interface ProductApiResponse {
   categoryName?: string | null
   category?: string | { id?: number; name?: string } | null
 }
+
+/**
+ * Category returned by the Spring Boot API.
+ */
+export interface Category {
+  id: number
+  name: string
+  description?: string | null
+  merchantId: number
+}
+
+/**
+ * Category response used by the frontend API composable.
+ */
+export interface CategoryApiResponse {
+  id: number
+  name: string
+  description?: string | null
+  merchantId: number
+}

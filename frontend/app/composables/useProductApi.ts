@@ -1,4 +1,9 @@
-import type { Product, ProductApiResponse } from '~/types/product'
+import type {
+  Category,
+  CategoryApiResponse,
+  Product,
+  ProductApiResponse
+} from '~/types/product'
 
 const normalizeProduct = (item: ProductApiResponse): Product => {
   const category = typeof item.category === 'string'
@@ -39,8 +44,23 @@ export const useProductApi = () => {
     return normalizeProduct(response)
   }
 
+  const getCategories = async (merchantId: number): Promise<Category[]> => {
+    const response = await $fetch<CategoryApiResponse[]>(
+      `/api/merchants/${merchantId}/categories`,
+      { baseURL }
+    )
+
+    return response.map((category) => ({
+      id: Number(category.id),
+      name: category.name,
+      description: category.description ?? '',
+      merchantId: Number(category.merchantId)
+    }))
+  }
+
   return {
     getProducts,
-    getProduct
+    getProduct,
+    getCategories
   }
 }
