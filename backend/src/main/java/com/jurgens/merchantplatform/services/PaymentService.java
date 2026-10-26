@@ -110,22 +110,31 @@ public class PaymentService {
         payment.setCreatedAt(LocalDateTime.now());
 
         payment = paymentRepository.saveAndFlush(payment);
+try {
+    MpesaService.StkPushResponse response =
+            mpesaService.initiateStkPush(
+                    amount.intValue(),
+                    phoneNumber,
+                    order.getOrderNumber()
+            );
 
-        MpesaService.StkPushResponse response =
-                mpesaService.initiateStkPush(
-                        amount.intValue(),
-                        phoneNumber,
-                        order.getOrderNumber()
-                );
+    payment.setMerchantRequestId(response.MerchantRequestID());
+    payment.setCheckoutRequestId(response.CheckoutRequestID());
+    payment.setResultCode(Integer.valueOf(response.ResponseCode()));
+    payment.setResultDesc(response.ResponseDescription());
 
-        payment.setMerchantRequestId(response.MerchantRequestID());
-        payment.setCheckoutRequestId(response.CheckoutRequestID());
-        payment.setResultCode(Integer.valueOf(response.ResponseCode()));
-        payment.setResultDesc(response.ResponseDescription());
+} catch (MpesaService.StkPushOutcomeUnknownException ex) {
+    // Keep the payment PENDING because Safaricom may have received the request.
+    payment.setResultDesc(ex.getMessage());
 
-        Payment savedPayment = paymentRepository.save(payment);
+    Payment savedPayment = paymentRepository.save(payment);
 
-        return convertToResponse(savedPayment);
+    return convertToResponse(savedPayment);
+}
+
+Payment savedPayment = paymentRepository.save(payment);
+
+return convertToResponse(savedPayment);
     }
 
     @Transactional

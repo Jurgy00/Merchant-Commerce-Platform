@@ -1,5 +1,10 @@
 
 package com.jurgens.merchantplatform.services;
+import com.jurgens.merchantplatform.dto.PaymentResponse;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import com.jurgens.merchantplatform.dto.PaymentRequest;
 import org.junit.jupiter.api.Assertions;
 import com.jurgens.merchantplatform.entities.Order;
@@ -193,5 +198,49 @@ void pendingPaymentPreventsDuplicateStkPush() {
             .initiateStkPush(anyInt(), anyString(), anyString());
 
     verify(paymentRepository, never()).saveAndFlush(any(Payment.class));
+}
+@Test
+void uncertainStkPushKeepsPaymentPending() {
+    Order order = new Order();
+    order.setStatus(OrderStatus.PENDING);
+    order.setTotalAmount(new BigDecimal("2000.00"));
+    order.setOrderNumber("ORD-TEST-001");
+
+    when(orderRepository.findByIdForUpdate(1L))
+            .thenReturn(Optional.of(order));
+
+    when(paymentRepository.findByOrderIdAndStatus(
+            1L, PaymentStatus.PENDING))
+            .thenReturn(Optional.empty());
+
+    when(paymentRepository.saveAndFlush(any(Payment.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+    when(paymentRepository.save(any(Payment.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+    doThrow(new MpesaService.StkPushOutcomeUnknownException(
+            "The STK Push outcome is unknown. Do not retry automatically.",
+            new RuntimeException("Read timed out")
+    )).when(mpesaService).initiateStkPush(
+            eq(2000),
+            eq("254712345678"),
+            eq("ORD-TEST-001")
+    );
+
+    PaymentRequest request = new PaymentRequest();
+    request.setOrderId(1L);
+    request.setPhoneNumber("0712345678");
+
+    PaymentResponse response = paymentService.initiatePayment(request);
+
+    assertEquals(PaymentStatus.PENDING, response.getStatus());
+    assertEquals(
+            "The STK Push outcome is unknown. Do not retry automatically.",
+            response.getResultDesc()
+    );
+
+    verify(mpesaService, times(1))
+            .initiateStkPush(2000, "254712345678", "ORD-TEST-001");
 }
 }

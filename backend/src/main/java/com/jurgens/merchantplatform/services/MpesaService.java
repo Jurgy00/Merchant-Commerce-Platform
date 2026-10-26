@@ -1,12 +1,14 @@
+
 package com.jurgens.merchantplatform.services;
 
 import com.jurgens.merchantplatform.config.MpesaConfig;
-import org.springframework.stereotype.Service;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
-import java.time.Duration;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -26,15 +28,17 @@ public class MpesaService {
     ) {
         this.mpesaConfig = mpesaConfig;
         this.darajaAuthService = darajaAuthService;
-SimpleClientHttpRequestFactory requestFactory =
-        new SimpleClientHttpRequestFactory();
 
-requestFactory.setConnectTimeout(Duration.ofSeconds(5));
-requestFactory.setReadTimeout(Duration.ofSeconds(15));
+        SimpleClientHttpRequestFactory requestFactory =
+                new SimpleClientHttpRequestFactory();
 
-this.restClient = RestClient.builder()
-        .requestFactory(requestFactory)
-        .build();    }
+        requestFactory.setConnectTimeout(Duration.ofSeconds(5));
+        requestFactory.setReadTimeout(Duration.ofSeconds(15));
+
+        this.restClient = RestClient.builder()
+                .requestFactory(requestFactory)
+                .build();
+    }
 
     public StkPushResponse initiateStkPush(
             int amount,
@@ -42,6 +46,7 @@ this.restClient = RestClient.builder()
             String accountReference
     ) {
 
+        // Obtain the token before attempting the STK Push.
         String accessToken = darajaAuthService.getAccessToken();
 
         String timestamp = LocalDateTime.now()
@@ -69,14 +74,36 @@ this.restClient = RestClient.builder()
         request.put("PhoneNumber", phoneNumber);
         request.put("CallBackURL", mpesaConfig.getCallbackUrl());
         request.put("AccountReference", accountReference);
-        request.put("TransactionDesc", "Merchant Commerce Platform Payment");
+        request.put(
+                "TransactionDesc",
+                "Merchant Commerce Platform Payment"
+        );
 
-        return restClient.post()
-                .uri(mpesaConfig.getStkPushUrl())
-                .header("Authorization", "Bearer " + accessToken)
-                .body(request)
-                .retrieve()
-                .body(StkPushResponse.class);
+        try {
+            StkPushResponse response = restClient.post()
+                    .uri(mpesaConfig.getStkPushUrl())
+                    .header("Authorization", "Bearer " + accessToken)
+                    .body(request)
+                    .retrieve()
+                    .body(StkPushResponse.class);
+
+            if (response == null) {
+                throw new StkPushOutcomeUnknownException(
+                        "No response received from Daraja. "
+                                + "The STK Push outcome is unknown.",
+                        null
+                );
+            }
+
+            return response;
+
+        } catch (ResourceAccessException ex) {
+            throw new StkPushOutcomeUnknownException(
+                    "The STK Push outcome is unknown. "
+                            + "Do not retry automatically.",
+                    ex
+            );
+        }
     }
 
     public record StkPushResponse(
@@ -86,5 +113,16 @@ this.restClient = RestClient.builder()
             String ResponseDescription,
             String CustomerMessage
     ) {
+    }
+
+    public static class StkPushOutcomeUnknownException
+            extends RuntimeException {
+
+        public StkPushOutcomeUnknownException(
+                String message,
+                Throwable cause
+        ) {
+            super(message, cause);
+        }
     }
 }
