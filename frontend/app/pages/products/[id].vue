@@ -1,14 +1,14 @@
+
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import type { Product } from '~/types/product'
 
 const route = useRoute()
 const { getProduct } = useProductApi()
-const { addToCart, cart } = useCart()
+const { addToCart, updateQuantity, cart } = useCart()
 const toast = useToast()
 
 const product = ref<Product | null>(null)
-const quantity = ref(1)
 const isLoading = ref(true)
 const errorMessage = ref('')
 
@@ -16,7 +16,6 @@ const loadProduct = async () => {
   const productId = Number(route.params.id)
 
   product.value = null
-  quantity.value = 1
   isLoading.value = true
   errorMessage.value = ''
 
@@ -76,39 +75,47 @@ const handleQuantityChange = (amount: number) => {
     return
   }
 
-  const newQuantity = quantity.value + amount
+  const currentQuantity = cartQuantity.value
+  const newQuantity = currentQuantity + amount
 
-  if (newQuantity < 1 || newQuantity > remainingStock.value) {
+  if (newQuantity < 0 || newQuantity > product.value.stock) {
     return
   }
 
-  quantity.value = newQuantity
+  if (currentQuantity === 0 && newQuantity > 0) {
+    addToCart(product.value)
+    return
+  }
+
+  if (currentQuantity > 0) {
+    updateQuantity(product.value.id, amount)
+  }
 }
 
 const handleAddToCart = () => {
-  if (!product.value || quantity.value > remainingStock.value) {
+  if (!product.value || remainingStock.value <= 0) {
     return
   }
 
-  for (let i = 0; i < quantity.value; i++) {
-    addToCart(product.value)
-  }
+  addToCart(product.value)
 
   toast.add({
     title: 'Added to cart',
-    description: `${quantity.value} × ${product.value.name} added to your cart.`,
+    description: `${product.value.name} added to your bag.`,
     icon: 'i-lucide-check-circle'
   })
-
-  quantity.value = 1
 }
 
 const handleBuyNow = async () => {
-  if (!product.value || quantity.value > remainingStock.value) {
+  if (!product.value) {
     return
   }
 
-  for (let i = 0; i < quantity.value; i++) {
+  if (cartQuantity.value === 0) {
+    if (product.value.stock <= 0) {
+      return
+    }
+
     addToCart(product.value)
   }
 
@@ -118,366 +125,258 @@ const handleBuyNow = async () => {
 
 <template>
   <main>
-
-    <!-- =================================
-         PRODUCT
-    ================================== -->
+    <!-- Main product section -->
     <section
       v-if="product"
-      class="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8"
+      class="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8"
     >
-
       <!-- Back navigation -->
       <div class="mb-8">
         <UButton
           to="/#products"
           color="neutral"
           variant="ghost"
+          size="sm"
           icon="i-lucide-arrow-left"
         >
           Back to collection
         </UButton>
       </div>
 
-
-      <!-- =================================
-           MAIN PRODUCT AREA
-      ================================== -->
-      <div
-        class="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start lg:gap-16"
-      >
-
-        <!-- =================================
-             BOOK COVER
-        ================================== -->
+      <div class="grid gap-7 lg:grid-cols-[0.55fr_1.05fr] lg:gap-16">
+        <!-- Book cover -->
         <div>
-          <div class="flex min-h-[360px] items-center justify-center py-4 sm:min-h-[520px]">
+          <div class="flex min-h-[420px] items-center justify-center border border-default bg-[#f3f1ed] p-8 dark:bg-[#252522] sm:min-h-[560px]">
             <img
               :src="product.image"
               :alt="`${product.name} book cover`"
-              class="block max-h-[520px] w-auto max-w-[90%] rounded-r-lg rounded-l-sm object-contain shadow-xl"
+              class="max-h-[500px] max-w-full object-contain shadow-2xl"
             />
           </div>
 
-
-          <!-- Availability beneath cover -->
-          <div
-            class="mt-4 flex items-center justify-center gap-2 text-sm text-muted"
-          >
+          <div class="mt-4 flex items-center justify-center gap-2 text-sm text-muted">
             <span
               class="size-2 rounded-full"
-              :class="
-                remainingStock > 0
-                  ? 'bg-success'
-                  : 'bg-error'
-              "
+              :class="remainingStock > 0 ? 'bg-success' : 'bg-error'"
             />
 
-            <span>
-              {{
-                remainingStock > 0
-                  ? `${remainingStock} available`
-                  : 'Currently unavailable'
-              }}
-            </span>
+            {{ remainingStock > 0
+              ? `${remainingStock} available`
+              : 'Currently unavailable'
+            }}
           </div>
         </div>
 
-
-        <!-- =================================
-             PRODUCT INFORMATION
-        ================================== -->
-        <div>
-
+        <!-- Product information -->
+        <div class="flex flex-col">
           <!-- Category -->
-          <div
-            class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1.5"
-          >
-            <span
-              class="text-xs font-semibold uppercase tracking-widest text-primary"
-            >
-              {{ product.category }}
-            </span>
-          </div>
-
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+            {{ product.category }}
+          </p>
 
           <!-- Title -->
-          <h1
-            class="mt-5 text-4xl font-black tracking-tight text-highlighted sm:text-5xl"
-          >
+          <h1 class="mt-4 text-3xl font-black leading-tight tracking-tight text-highlighted sm:text-4xl lg:text-5xl">
             {{ product.name }}
           </h1>
 
+          <!-- Author -->
+          <p class="mt-3 text-base text-muted">
+            By {{ product.author }}
+          </p>
 
           <!-- Price -->
-          <div
-            class="mt-6 flex flex-wrap items-end gap-x-4 gap-y-2"
-          >
-            <p
-              class="text-3xl font-bold text-highlighted sm:text-4xl"
-            >
-              KES {{ product.price }}
+          <div class="mt-7">
+            <p class="text-xs font-semibold uppercase tracking-wider text-muted">
+              Price
             </p>
 
-            <span
-              v-if="product.stock > 0"
-              class="mb-1 text-sm text-success"
-            >
-              In stock
-            </span>
-
-            <span
-              v-else
-              class="mb-1 text-sm text-error"
-            >
-              Sold out
-            </span>
+            <p class="mt-1 text-3xl font-bold tracking-tight text-highlighted">
+              KES {{ product.price.toLocaleString() }}
+            </p>
           </div>
 
+          <div class="my-7 border-t border-default" />
 
-          <!-- Divider -->
-          <div class="my-8 border-t border-default" />
-
-
-          <!-- Short description -->
+          <!-- Description -->
           <div>
-            <h2
-              class="text-sm font-semibold uppercase tracking-widest text-muted"
-            >
+            <h2 class="text-sm font-bold uppercase tracking-wider text-highlighted">
               About this book
             </h2>
 
-            <p
-              class="mt-4 text-base leading-8 text-muted sm:text-lg"
-            >
+            <p class="mt-3 text-sm leading-7 text-muted sm:text-base">
               {{ product.description }}
             </p>
           </div>
 
+          <!-- Purchase area -->
+          <div class="mt-8 border border-default bg-default p-5 sm:p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <p class="text-sm font-semibold text-highlighted">
+                Availability
+              </p>
 
-          <!-- =================================
-               PURCHASE AREA
-          ================================== -->
-          <div
-            class="mt-8 rounded-2xl border border-default bg-elevated/40 p-5 sm:p-6"
-          >
+              <span
+                class="text-xs font-semibold"
+                :class="remainingStock > 0 ? 'text-success' : 'text-error'"
+              >
+                {{ remainingStock > 0
+                  ? `${remainingStock} in stock`
+                  : 'Out of stock'
+                }}
+              </span>
+            </div>
 
-            <div
-              class="flex flex-col gap-5"
-            >
-
-              <!-- Quantity -->
+            <div class="mt-5 flex items-center justify-between gap-4">
               <div>
-                <p
-                  class="mb-3 text-sm font-medium"
-                >
+                <p class="text-sm font-semibold text-highlighted">
                   Quantity
                 </p>
 
-                <div
-                  class="flex w-fit items-center rounded-xl border border-default bg-default"
-                >
-
-                  <UButton
-                    icon="i-lucide-minus"
-                    color="neutral"
-                    variant="ghost"
-                    aria-label="Decrease quantity"
-                    :disabled="quantity <= 1"
-                    @click="handleQuantityChange(-1)"
-                  />
-
-                  <span
-                    class="min-w-12 text-center font-semibold"
-                  >
-                    {{ quantity }}
-                  </span>
-
-                  <UButton
-                    icon="i-lucide-plus"
-                    color="neutral"
-                    variant="ghost"
-                    aria-label="Increase quantity"
-                    :disabled="
-                      remainingStock <= 0 ||
-                      quantity >= remainingStock
-                    "
-                    @click="handleQuantityChange(1)"
-                  />
-
-                </div>
-
-                <p
-                  v-if="remainingStock > 0"
-                  class="mt-2 text-xs text-muted"
-                >
-                  {{ remainingStock }}
-                  available
+                <p class="mt-1 text-xs text-muted">
+                  {{ cartQuantity > 0
+                    ? `${cartQuantity} ${cartQuantity === 1 ? 'copy' : 'copies'} already in your bag`
+                    : 'Your bag is empty for this book'
+                  }}
                 </p>
-
               </div>
 
-
-              <!-- Buttons -->
-              <div
-                class="grid gap-3 sm:grid-cols-2"
-              >
-
+              <div class="flex items-center border border-default">
                 <UButton
-                  size="lg"
-                  block
-                  icon="i-lucide-shopping-cart"
-                  :disabled="remainingStock <= 0"
-                  @click="handleAddToCart"
-                >
-                  Add to Cart
-                </UButton>
-
-                <UButton
-                  size="lg"
-                  block
+                  icon="i-lucide-minus"
                   color="neutral"
-                  variant="outline"
-                  trailing-icon="i-lucide-arrow-right"
+                  variant="ghost"
+                  square
+                  aria-label="Decrease quantity"
+                  :disabled="cartQuantity <= 0"
+                  @click="handleQuantityChange(-1)"
+                />
+
+                <span class="min-w-10 text-center text-sm font-semibold text-highlighted">
+                  {{ cartQuantity }}
+                </span>
+
+                <UButton
+                  icon="i-lucide-plus"
+                  color="neutral"
+                  variant="ghost"
+                  square
+                  aria-label="Increase quantity"
                   :disabled="remainingStock <= 0"
-                  @click="handleBuyNow"
-                >
-                  Buy Now
-                </UButton>
-
+                  @click="handleQuantityChange(1)"
+                />
               </div>
+            </div>
 
+            <div class="mt-6 grid gap-3 sm:grid-cols-2">
+              <UButton
+                block
+                size="lg"
+                color="neutral"
+                variant="solid"
+                icon="i-lucide-shopping-bag"
+                :disabled="remainingStock <= 0"
+                class="w-full cursor-pointer rounded-none font-semibold transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
+                @click="handleAddToCart"
+              >
+                Add to bag
+              </UButton>
+
+              <UButton
+                block
+                size="lg"
+                color="neutral"
+                variant="outline"
+                trailing-icon="i-lucide-arrow-right"
+                :disabled="cartQuantity <= 0 && product.stock <= 0"
+                class="rounded-none font-semibold"
+                @click="handleBuyNow"
+              >
+                Buy now
+              </UButton>
             </div>
           </div>
 
-
-          <!-- Small reassurance -->
-          <div
-            class="mt-6 flex flex-col gap-3 text-sm text-muted sm:flex-row sm:gap-6"
-          >
+          <!-- Reassurance -->
+          <div class="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-xs text-muted">
             <div class="flex items-center gap-2">
-              <UIcon
-                name="i-lucide-shield-check"
-                class="size-4 text-primary"
-              />
+              <UIcon name="i-lucide-shield-check" class="size-4" />
               Secure checkout
             </div>
 
             <div class="flex items-center gap-2">
-              <UIcon
-                name="i-lucide-smartphone"
-                class="size-4 text-primary"
-              />
-              Mobile friendly
+              <UIcon name="i-lucide-book-open" class="size-4" />
+              Discover your next read
             </div>
           </div>
-
         </div>
-
       </div>
     </section>
 
-
-    <!-- =================================
-         PRODUCT DETAILS
-    ================================== -->
+    <!-- Additional product information -->
     <section
       v-if="product"
-      class="border-y border-default bg-elevated/30"
+      class="border-t border-default bg-elevated/30"
     >
-      <div
-        class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
-      >
+      <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div class="max-w-3xl">
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+            More information
+          </p>
 
-        <div
-          class="mx-auto max-w-2xl"
-        >
+          <h2 class="mt-2 text-2xl font-bold tracking-tight text-highlighted">
+            Book details
+          </h2>
 
-          <!-- Description -->
-          <div>
-            <p
-              class="text-sm font-semibold uppercase tracking-widest text-primary"
-            >
-              The details
-            </p>
+          <div class="mt-6 divide-y divide-default border-y border-default">
+            <div class="flex items-center justify-between gap-4 py-4">
+              <span class="text-sm text-muted">
+                Book title
+              </span>
 
-            <h2
-              class="mt-2 text-3xl font-bold tracking-tight text-highlighted"
-            >
-              About this book
-            </h2>
+              <span class="text-right text-sm font-semibold text-highlighted">
+                {{ product.name }}
+              </span>
+            </div>
 
-            <p
-              class="mt-6 max-w-3xl text-base leading-8 text-muted"
-            >
-              {{ product.description }}
-            </p>
-          </div>
+            <div class="flex items-center justify-between gap-4 py-4">
+              <span class="text-sm text-muted">
+                Author
+              </span>
 
+              <span class="text-right text-sm font-semibold text-highlighted">
+                {{ product.author }}
+              </span>
+            </div>
 
-          <!-- Product information -->
-          <div>
-            <p
-              class="text-sm font-semibold uppercase tracking-widest text-primary"
-            >
-              Product information
-            </p>
+            <div class="flex items-center justify-between gap-4 py-4">
+              <span class="text-sm text-muted">
+                Category
+              </span>
 
-            <div
-              class="mt-5 divide-y divide-default rounded-2xl border border-default bg-default"
-            >
+              <span class="text-right text-sm font-semibold text-highlighted">
+                {{ product.category }}
+              </span>
+            </div>
 
-              <div
-                class="flex items-center justify-between gap-4 px-5 py-4"
-              >
-                <span class="text-sm text-muted">
-                  Category
-                </span>
-
-                <span class="text-sm font-semibold text-highlighted">
-                  {{ product.category }}
-                </span>
-              </div>
-
-              <div
-                class="flex items-center justify-between gap-4 px-5 py-4"
-              >
-                <span class="text-sm text-muted">
-                  Price
-                </span>
-
-                <span class="text-sm font-semibold text-highlighted">
-                  KES {{ product.price }}
-                </span>
-              </div>
-
-             <div
-              class="flex items-center justify-between gap-4 px-5 py-4"
-            >
+            <div class="flex items-center justify-between gap-4 py-4">
               <span class="text-sm text-muted">
                 Availability
               </span>
 
               <span
-                class="text-sm font-semibold"
+                class="text-right text-sm font-semibold"
                 :class="remainingStock > 0 ? 'text-success' : 'text-error'"
               >
-                {{
-                  remainingStock > 0
-                    ? `${remainingStock} available`
-                    : 'Currently unavailable'
+                {{ remainingStock > 0
+                  ? `${remainingStock} available`
+                  : 'Currently unavailable'
                 }}
               </span>
             </div>
-
-            </div>
           </div>
-
         </div>
-
       </div>
     </section>
-
 
     <!-- Loading state -->
     <section
@@ -516,10 +415,9 @@ const handleBuyNow = async () => {
           color="neutral"
           variant="outline"
         >
-          Back to Store
+          Back to store
         </UButton>
       </div>
     </section>
-
   </main>
 </template>

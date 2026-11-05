@@ -84,19 +84,19 @@ const resetFilters = () => {
   <div>
     <!-- Editorial introduction -->
     <section class="border-b border-default">
-      <div class="mx-auto max-w-[1800px] px-4 pb-9 pt-10 sm:px-6 lg:px-8 lg:pb-11 lg:pt-14">
-        <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+      <div class="mx-auto max-w-[1800px] px-4 py-3 sm:px-6 lg:px-8 lg:py-4">
+        <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div class="max-w-4xl">
             <p class="text-[10px] font-black uppercase tracking-[0.28em] text-primary">
               The BookStore Collection
             </p>
 
-            <h1 class="mt-3 max-w-4xl text-4xl font-black leading-[0.98] tracking-[-0.045em] text-highlighted sm:text-5xl lg:text-7xl">
+            <h1 class="mt-1 max-w-4xl text-2xl font-black leading-tight tracking-tight text-highlighted sm:text-3xl lg:text-4xl">
               Books worth making
               <span class="text-primary">time for.</span>
             </h1>
 
-            <p class="mt-5 max-w-2xl text-sm leading-6 text-muted sm:text-base">
+            <p class="mt-2 max-w-2xl text-sm leading-5 text-muted">
               Discover thoughtful books for focused work, personal growth,
               technology, business and stories worth getting lost in.
             </p>
@@ -125,36 +125,12 @@ const resetFilters = () => {
       </div>
     </section>
 
-    <!-- Categories -->
-    <section class="border-b border-default">
-      <div class="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center gap-5 overflow-x-auto">
-          <span class="shrink-0 py-4 text-[9px] font-black uppercase tracking-[0.18em] text-muted">
-            Browse
-          </span>
 
-          <button
-            v-for="category in categoryOptions"
-            :key="category"
-            type="button"
-            class="shrink-0 border-b-2 py-4 text-[10px] font-bold uppercase tracking-[0.1em] transition-colors"
-            :class="
-              selectedCategory === category
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted hover:text-highlighted'
-            "
-            @click="selectedCategory = category"
-          >
-            {{ category }}
-          </button>
-        </div>
-      </div>
-    </section>
 
     <!-- Catalogue -->
     <main
       id="products"
-      class="mx-auto max-w-[1800px] scroll-mt-32 px-4 pb-16 pt-9 sm:px-6 lg:px-8 lg:pt-11"
+      class="mx-auto max-w-[1800px] scroll-mt-32 px-4 pb-12 pt-5 sm:px-6 lg:px-8 lg:pt-6"
     >
       <div class="flex flex-col gap-4 border-b border-default pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -175,16 +151,24 @@ const resetFilters = () => {
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <UInput
-            v-model="maxPrice"
-            type="number"
-            min="0"
-            size="sm"
-            icon="i-lucide-tag"
-            class="w-32"
-            placeholder="Max price"
-          />
+            <UInput
+              v-model="searchQuery"
+              icon="i-lucide-search"
+              size="sm"
+              class="w-full sm:w-52"
+              placeholder="Search books or authors..."
+              aria-label="Search books or authors"
+            />
 
+            <UInput
+              v-model="maxPrice"
+              type="number"
+              min="0"
+              size="sm"
+              icon="i-lucide-tag"
+              class="w-32"
+              placeholder="Max price"
+            />
           <USelect
             v-model="sortBy"
             :items="[
@@ -242,7 +226,7 @@ const resetFilters = () => {
       <!-- Product grid -->
       <div
         v-else-if="filteredProducts.length"
-        class="mt-7 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 md:gap-x-5 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
+        class="mt-5 grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 sm:gap-x-5 md:grid-cols-4 md:gap-y-8 xl:grid-cols-5"
       >
         <ProductCard
           v-for="product in filteredProducts"

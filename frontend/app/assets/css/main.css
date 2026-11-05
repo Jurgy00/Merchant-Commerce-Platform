@@ -16,22 +16,25 @@
   --color-green-900: #0A5331;
   --color-green-950: #052E16;
 }
+
 html {
   min-height: 100%;
   color-scheme: light;
-  background-color: #F1F0EC;
-}
-
-html.dark {
-  color-scheme: dark;
-  background-color: #0F1110;
+  background: #FFFFFF;
 }
 
 body {
   min-height: 100vh;
-  background-color: #F1F0EC;
+  background: #FFFFFF;
+  color: #171717;
+}
+
+html.dark {
+  color-scheme: dark;
+  background: #0F1110;
 }
 
 html.dark body {
-  background-color: #0F1110;
+  background: #0F1110;
+  color: #F5F5F5;
 }
