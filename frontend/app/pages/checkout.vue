@@ -88,7 +88,7 @@ const handleCheckout = async () => {
         phoneNumber: phone,
         deliveryLocation: deliveryAddress.value.trim(),
         notes: optionalNotes.value.trim(),
-        merchantId: 1,
+        merchantId: 2,
         items: cart.value.map(item => ({
           productId: item.product.id,
           quantity: item.quantity
